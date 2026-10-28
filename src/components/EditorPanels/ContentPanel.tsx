@@ -39,6 +39,15 @@ import {
   Maximize2,
   Sliders,
   X,
+  AlignLeft,
+  AlignCenterHorizontal,
+  AlignRight,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
+  LayoutGrid,
 } from 'lucide-react';
 
 interface ContentPanelProps {
@@ -57,6 +66,8 @@ interface ContentPanelProps {
   onBatchSetScale?: (scale: number) => void;
   onBatchChangeLayer?: (action: 'front' | 'back' | 'forward' | 'backward') => void;
   onBatchSetWidth?: (width: number) => void;
+  onBatchAlign?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  onBatchDistribute?: (direction: 'horizontal' | 'vertical') => void;
 }
 
 export const ContentPanel: React.FC<ContentPanelProps> = ({
@@ -75,6 +86,8 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
   onBatchSetScale,
   onBatchChangeLayer,
   onBatchSetWidth,
+  onBatchAlign,
+  onBatchDistribute,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -490,6 +503,143 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Automatic Alignment & Distance Distribution Section (تراز خودکار و توزیع فاصله) */}
+          {onBatchAlign && (
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-current/15 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5 text-slate-300">
+                  <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
+                  <span>تراز خودکار و توزیع فاصله (Align & Distribute):</span>
+                </span>
+                <span className="text-[10px] text-orange-400 font-mono">
+                  {selectedCount} مورد
+                </span>
+              </div>
+
+              {/* Horizontal Alignment */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-medium opacity-75">
+                  تراز افقی (راست، مرکز، چپ):
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    onClick={() => {
+                      soundEffects.playPop();
+                      onBatchAlign('right');
+                    }}
+                    className="py-1.5 px-2 rounded-xl border border-current/15 bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                    title="تراز راست تمامی عناصر انتخاب شده"
+                  >
+                    <AlignRight className="w-3.5 h-3.5" />
+                    <span>راست</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      soundEffects.playPop();
+                      onBatchAlign('center');
+                    }}
+                    className="py-1.5 px-2 rounded-xl border border-current/15 bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                    title="تراز مرکز افقی عناصر انتخاب شده"
+                  >
+                    <AlignCenterHorizontal className="w-3.5 h-3.5" />
+                    <span>مرکز</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      soundEffects.playPop();
+                      onBatchAlign('left');
+                    }}
+                    className="py-1.5 px-2 rounded-xl border border-current/15 bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                    title="تراز چپ تمامی عناصر انتخاب شده"
+                  >
+                    <AlignLeft className="w-3.5 h-3.5" />
+                    <span>چپ</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Vertical Alignment */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] font-medium opacity-75">
+                  تراز عمودی (بالا، وسط، پایین):
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    onClick={() => {
+                      soundEffects.playPop();
+                      onBatchAlign('top');
+                    }}
+                    className="py-1.5 px-2 rounded-xl border border-current/15 bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                    title="تراز بالا (هم‌تراز با بالاترین عنصر)"
+                  >
+                    <AlignStartVertical className="w-3.5 h-3.5" />
+                    <span>بالا</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      soundEffects.playPop();
+                      onBatchAlign('middle');
+                    }}
+                    className="py-1.5 px-2 rounded-xl border border-current/15 bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                    title="تراز وسط عمودی عناصر انتخاب شده"
+                  >
+                    <AlignCenterVertical className="w-3.5 h-3.5" />
+                    <span>وسط</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      soundEffects.playPop();
+                      onBatchAlign('bottom');
+                    }}
+                    className="py-1.5 px-2 rounded-xl border border-current/15 bg-black/10 dark:bg-white/10 hover:bg-orange-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all"
+                    title="تراز پایین (هم‌تراز با پایین‌ترین عنصر)"
+                  >
+                    <AlignEndVertical className="w-3.5 h-3.5" />
+                    <span>پایین</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Distance Distribution */}
+              {onBatchDistribute && (
+                <div className="flex flex-col gap-1 pt-1 border-t border-current/10">
+                  <span className="text-[11px] font-medium opacity-75">
+                    توزیع فاصله (Distribute فواصل یکنواخت):
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => {
+                        soundEffects.playPop();
+                        onBatchDistribute('vertical');
+                      }}
+                      className="py-2 px-2.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all text-cyan-300 hover:shadow-md"
+                      title="توزیع مساوی و متوازن فاصله عمودی بین عناصر"
+                    >
+                      <AlignVerticalDistributeCenter className="w-4 h-4 text-cyan-400" />
+                      <span>توزیع عمودی</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        soundEffects.playPop();
+                        onBatchDistribute('horizontal');
+                      }}
+                      className="py-2 px-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500 hover:text-white text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all text-emerald-300 hover:shadow-md"
+                      title="توزیع مساوی و متوازن فاصله افقی بین عناصر"
+                    >
+                      <AlignHorizontalDistributeCenter className="w-4 h-4 text-emerald-400" />
+                      <span>توزیع افقی</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Delete Selected Button (حذف تکی یا دسته‌جمعی) */}
           <div className="pt-2 border-t border-current/15">

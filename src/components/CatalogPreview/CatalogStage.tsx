@@ -32,6 +32,8 @@ interface CatalogStageProps {
   onBatchSetScale?: (scale: number) => void;
   onBatchDuplicate?: () => void;
   onBatchChangeLayer?: (action: 'front' | 'back' | 'forward' | 'backward') => void;
+  onBatchAlign?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  onBatchDistribute?: (direction: 'horizontal' | 'vertical') => void;
   onSelectAllBlocks?: () => void;
   onClearSelection?: () => void;
 }
@@ -52,6 +54,8 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
   onBatchSetScale,
   onBatchDuplicate,
   onBatchChangeLayer,
+  onBatchAlign,
+  onBatchDistribute,
   onSelectAllBlocks,
   onClearSelection,
 }) => {
@@ -554,6 +558,8 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
             onDelete={() => onBatchDelete && onBatchDelete()}
             onDuplicate={onBatchDuplicate}
             onChangeLayer={(action) => onBatchChangeLayer && onBatchChangeLayer(action)}
+            onAlign={(alignment) => onBatchAlign && onBatchAlign(alignment)}
+            onDistribute={(dir) => onBatchDistribute && onBatchDistribute(dir)}
             onSelectAll={() => onSelectAllBlocks && onSelectAllBlocks()}
             onClearSelection={() => onClearSelection && onClearSelection()}
           />

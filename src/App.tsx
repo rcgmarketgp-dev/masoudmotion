@@ -523,6 +523,227 @@ export default function App() {
     [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]
   );
 
+  // Batch / Single Alignment (Align Left, Center, Right, Top, Middle, Bottom)
+  const handleBatchAlign = useCallback(
+    (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+      const targetIds =
+        selectedBlockIds.length > 0
+          ? selectedBlockIds
+          : selectedBlockId
+          ? [selectedBlockId]
+          : [];
+      if (targetIds.length === 0) return;
+
+      soundEffects.playPop();
+
+      let desc = '';
+      switch (alignment) {
+        case 'left':
+          desc = 'تراز چپ عناصر';
+          break;
+        case 'center':
+          desc = 'تراز وسط افقی عناصر';
+          break;
+        case 'right':
+          desc = 'تراز راست عناصر';
+          break;
+        case 'top':
+          desc = 'تراز بالای عناصر';
+          break;
+        case 'middle':
+          desc = 'تراز وسط عمودی عناصر';
+          break;
+        case 'bottom':
+          desc = 'تراز پایین عناصر';
+          break;
+      }
+
+      updateStateWithHistory((prev) => {
+        const nextPages = [...prev.pg];
+        const curPage = nextPages[currentPageIndex];
+        if (!curPage) return prev;
+
+        const targetsWithCoords = curPage.bl
+          .map((b, idx) => ({
+            b,
+            idx,
+            posX: b.posX ?? 50,
+            posY: b.posY ?? Math.min(85, 14 + idx * 14),
+          }))
+          .filter((item) => targetIds.includes(item.b.id));
+
+        if (targetsWithCoords.length === 0) return prev;
+
+        let targetCoord = 0;
+        const isMulti = targetsWithCoords.length > 1;
+
+        if (alignment === 'left') {
+          targetCoord = isMulti
+            ? Math.min(...targetsWithCoords.map((t) => t.posX))
+            : 20;
+        } else if (alignment === 'center') {
+          const minX = Math.min(...targetsWithCoords.map((t) => t.posX));
+          const maxX = Math.max(...targetsWithCoords.map((t) => t.posX));
+          targetCoord = isMulti ? Math.round((minX + maxX) / 2) : 50;
+        } else if (alignment === 'right') {
+          targetCoord = isMulti
+            ? Math.max(...targetsWithCoords.map((t) => t.posX))
+            : 80;
+        } else if (alignment === 'top') {
+          targetCoord = isMulti
+            ? Math.min(...targetsWithCoords.map((t) => t.posY))
+            : 15;
+        } else if (alignment === 'middle') {
+          const minY = Math.min(...targetsWithCoords.map((t) => t.posY));
+          const maxY = Math.max(...targetsWithCoords.map((t) => t.posY));
+          targetCoord = isMulti ? Math.round((minY + maxY) / 2) : 50;
+        } else if (alignment === 'bottom') {
+          targetCoord = isMulti
+            ? Math.max(...targetsWithCoords.map((t) => t.posY))
+            : 85;
+        }
+
+        const updatedBl = curPage.bl.map((b, idx) => {
+          if (!targetIds.includes(b.id)) return b;
+
+          const currentX = b.posX ?? 50;
+          const currentY = b.posY ?? Math.min(85, 14 + idx * 14);
+
+          if (alignment === 'left' || alignment === 'right' || alignment === 'center') {
+            return {
+              ...b,
+              isFree: true,
+              posX: targetCoord,
+              posY: currentY,
+              al: alignment as 'left' | 'center' | 'right',
+            };
+          } else {
+            return {
+              ...b,
+              isFree: true,
+              posX: currentX,
+              posY: targetCoord,
+            };
+          }
+        });
+
+        nextPages[currentPageIndex] = {
+          ...curPage,
+          bl: updatedBl,
+          layoutMode: 'free',
+        };
+
+        return { ...prev, pg: nextPages };
+      }, desc);
+
+      showToast(`${desc} برای ${targetIds.length} عنصر انجام شد.`);
+    },
+    [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]
+  );
+
+  // Batch Distribute (Horizontal & Vertical Even Spacing)
+  const handleBatchDistribute = useCallback(
+    (direction: 'horizontal' | 'vertical') => {
+      const targetIds =
+        selectedBlockIds.length > 0
+          ? selectedBlockIds
+          : selectedBlockId
+          ? [selectedBlockId]
+          : [];
+      if (targetIds.length === 0) return;
+
+      soundEffects.playPop();
+
+      const desc =
+        direction === 'vertical'
+          ? 'توزیع یکنواخت فواصل عمودی'
+          : 'توزیع یکنواخت فواصل افقی';
+
+      updateStateWithHistory((prev) => {
+        const nextPages = [...prev.pg];
+        const curPage = nextPages[currentPageIndex];
+        if (!curPage) return prev;
+
+        const targets = curPage.bl
+          .map((b, idx) => ({
+            id: b.id,
+            posX: b.posX ?? 50,
+            posY: b.posY ?? Math.min(85, 14 + idx * 14),
+          }))
+          .filter((t) => targetIds.includes(t.id));
+
+        if (targets.length === 0) return prev;
+
+        const newCoords = new Map<string, { posX?: number; posY?: number }>();
+
+        if (direction === 'vertical') {
+          if (targets.length === 1) {
+            newCoords.set(targets[0].id, { posY: 50 });
+          } else if (targets.length === 2) {
+            const sorted = [...targets].sort((a, b) => a.posY - b.posY);
+            newCoords.set(sorted[0].id, { posY: 28 });
+            newCoords.set(sorted[1].id, { posY: 72 });
+          } else {
+            const sorted = [...targets].sort((a, b) => a.posY - b.posY);
+            let minY = sorted[0].posY;
+            let maxY = sorted[sorted.length - 1].posY;
+            if (maxY - minY < 15) {
+              minY = 18;
+              maxY = 82;
+            }
+            const step = (maxY - minY) / (sorted.length - 1);
+            sorted.forEach((item, i) => {
+              newCoords.set(item.id, { posY: Math.round(minY + i * step) });
+            });
+          }
+        } else {
+          // Horizontal distribution
+          if (targets.length === 1) {
+            newCoords.set(targets[0].id, { posX: 50 });
+          } else if (targets.length === 2) {
+            const sorted = [...targets].sort((a, b) => a.posX - b.posX);
+            newCoords.set(sorted[0].id, { posX: 28 });
+            newCoords.set(sorted[1].id, { posX: 72 });
+          } else {
+            const sorted = [...targets].sort((a, b) => a.posX - b.posX);
+            let minX = sorted[0].posX;
+            let maxX = sorted[sorted.length - 1].posX;
+            if (maxX - minX < 15) {
+              minX = 20;
+              maxX = 80;
+            }
+            const step = (maxX - minX) / (sorted.length - 1);
+            sorted.forEach((item, i) => {
+              newCoords.set(item.id, { posX: Math.round(minX + i * step) });
+            });
+          }
+        }
+
+        const updatedBl = curPage.bl.map((b, idx) => {
+          if (!targetIds.includes(b.id)) return b;
+          const c = newCoords.get(b.id);
+          return {
+            ...b,
+            isFree: true,
+            posX: c?.posX !== undefined ? c.posX : (b.posX ?? 50),
+            posY: c?.posY !== undefined ? c.posY : (b.posY ?? Math.min(85, 14 + idx * 14)),
+          };
+        });
+
+        nextPages[currentPageIndex] = {
+          ...curPage,
+          bl: updatedBl,
+          layoutMode: 'free',
+        };
+
+        return { ...prev, pg: nextPages };
+      }, desc);
+
+      showToast(`${desc} برای ${targetIds.length} عنصر انجام شد.`);
+    },
+    [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]
+  );
+
   // Keyboard shortcut listener for Ctrl+Z, Ctrl+Y, Delete/Backspace
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1110,6 +1331,8 @@ export default function App() {
                 onBatchSetScale={handleBatchSetScale}
                 onBatchChangeLayer={handleBatchChangeLayer}
                 onBatchSetWidth={handleBatchSetWidth}
+                onBatchAlign={handleBatchAlign}
+                onBatchDistribute={handleBatchDistribute}
               />
             )}
             {activeTab === 'icons' && (
@@ -1167,6 +1390,8 @@ export default function App() {
             onBatchSetScale={handleBatchSetScale}
             onBatchDuplicate={handleBatchDuplicate}
             onBatchChangeLayer={handleBatchChangeLayer}
+            onBatchAlign={handleBatchAlign}
+            onBatchDistribute={handleBatchDistribute}
             onSelectAllBlocks={handleSelectAllBlocks}
             onClearSelection={handleClearSelection}
           />
