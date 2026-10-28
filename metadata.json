@@ -1,0 +1,8 @@
+{
+  "name": "کاتالوگ‌ساز هوشمند | Smart Catalog Builder",
+  "description": "استودیوی ساخت کاتالوگ دیجیتال و تعاملی فارسی با منوهای متحرک، آیکون‌های رنگی و دکمه‌ای جذاب و انیمیشن‌های نرم",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
