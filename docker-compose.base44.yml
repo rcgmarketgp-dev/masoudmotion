@@ -1,0 +1,43 @@
+# Base44 development environment for the Smart Catalog Builder (Vite + React + Tailwind).
+#
+# The app is a pure client-side single-page app: `npm run dev` starts the Vite dev
+# server on port 3000. There is no backend, database or external service call, so
+# no infrastructure services or secrets are needed.
+#
+# The repo has no lockfile, so dependencies are installed at container start
+# (after the bind mount is available) and then the dev server is exec'd, keeping
+# source edits live.
+
+services:
+  web:
+    image: node:22
+    working_dir: /app
+    command:
+      - sh
+      - -ec
+      - |
+        npm install --no-audit --no-fund
+        exec npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      # Passed through by the platform; Vite >= 6.1 appends it to `server.allowedHosts`
+      # so the preview's proxied hostname is accepted.
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+      # Read by vite.config.ts to allow the preview proxy's hostname (preview mode only).
+      - BASE44_PREVIEW_MODE
+      - BASE44_PUBLIC_HOST_SUFFIX
+      - BASE44_SANDBOX_HOST_DOMAIN
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 150s
+    restart: on-failure
