@@ -71,11 +71,14 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
   const totalPages = state.pg.length;
   const currentPage = state.pg[currentPageIndex] || state.pg[0];
 
-  // Auto-calculate responsive scale
+  // Auto-calculate responsive scale (canvas area can change without a window resize,
+  // e.g. when the mobile tools drawer expands or collapses).
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
     const handleResize = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
       const availWidth = rect.width - (window.innerWidth < 768 ? 24 : 48);
       const availHeight = rect.height - (window.innerWidth < 768 ? 140 : 160);
       const sX = availWidth / dim.width;
@@ -85,8 +88,13 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
     };
 
     handleResize();
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(el);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
   }, [dim.width, dim.height, state.sz]);
 
   const effectiveScale = zoomManual ?? scale;

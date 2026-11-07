@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CatalogState, EditorUiTheme } from '../types/catalog';
 import { EDITOR_UI_THEMES_INFO } from '../constants/presets';
 import { soundEffects } from '../utils/soundEffects';
@@ -79,6 +79,16 @@ export const Header: React.FC<HeaderProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [dragKey, setDragKey] = useState(0); // For resetting position
 
+  // On phones the toolbar must stay in place (dragging would block page gestures).
+  const [isCompact, setIsCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsCompact(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   const handleToggleSound = () => {
     const nextState = soundEffects.toggleSound();
     setSoundActive(nextState);
@@ -111,20 +121,20 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Draggable Floating Toolbar Container */}
       <motion.div
         key={dragKey}
-        drag
+        drag={!isCompact}
         dragMomentum={false}
         dragElastic={0.08}
-        className="pointer-events-auto mx-auto max-w-full inline-block"
-        style={{ touchAction: 'none' }}
+        className="pointer-events-auto mx-auto w-full md:w-auto max-w-full"
+        style={{ touchAction: isCompact ? 'auto' : 'none' }}
       >
         <div
-          className={`flex items-center gap-2 p-1.5 sm:p-2 rounded-2xl md:rounded-3xl border border-slate-700/80 bg-slate-900/95 text-slate-100 shadow-2xl backdrop-blur-2xl transition-all duration-200 ring-1 ring-white/10 ${
-            isMinimized ? 'px-3 py-2' : ''
+          className={`flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-2xl md:rounded-3xl border border-slate-700/80 bg-slate-900/95 text-slate-100 shadow-2xl backdrop-blur-2xl transition-all duration-200 ring-1 ring-white/10 ${
+            isMinimized ? 'px-3 py-2 w-max mx-auto' : ''
           }`}
         >
           {/* Drag Handle with Tooltip */}
           <div
-            className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white cursor-grab active:cursor-grabbing transition-colors flex-none"
+            className="hidden md:flex items-center justify-center p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white cursor-grab active:cursor-grabbing transition-colors flex-none"
             title="منوی شناور را به هر کجای صفحه که می‌خواهید بکشید"
           >
             <GripVertical className="w-4 h-4" />
@@ -142,13 +152,13 @@ export const Header: React.FC<HeaderProps> = ({
           </motion.div>
 
           {/* Editable Title */}
-          <div className="relative flex items-center min-w-0">
+          <div className="relative flex items-center min-w-0 flex-1 md:flex-none">
             <input
               type="text"
               value={state.title}
               onChange={(e) => onUpdateTitle(e.target.value)}
               placeholder="عنوان کاتالوگ..."
-              className="w-28 sm:w-40 md:w-52 px-2.5 py-1.5 rounded-xl border border-white/10 bg-black/30 font-bold text-xs text-white focus:outline-none focus:border-orange-500 transition-all truncate"
+              className="w-full min-w-[72px] md:w-40 xl:w-52 px-2.5 py-1.5 rounded-xl border border-white/10 bg-black/30 font-bold text-xs text-white focus:outline-none focus:border-orange-500 transition-all truncate"
             />
           </div>
 
@@ -202,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <Save className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">ذخیره در حافظه</span>
                     {lastSavedTime && (
-                      <span className="text-[10px] opacity-75 font-mono hidden md:inline">
+                      <span className="text-[10px] opacity-75 font-mono hidden lg:inline">
                         ({formatTime(lastSavedTime)})
                       </span>
                     )}
@@ -335,7 +345,7 @@ export const Header: React.FC<HeaderProps> = ({
                   soundEffects.playPop();
                   onOpenArchiveModal();
                 }}
-                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-xs font-bold transition-all cursor-pointer shadow-sm flex-none"
+                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-xs font-bold transition-all cursor-pointer shadow-sm flex-none"
                 title="بایگانی کاتالوگ‌های ساخته شده"
               >
                 <FolderArchive className="w-3.5 h-3.5" />
@@ -359,7 +369,7 @@ export const Header: React.FC<HeaderProps> = ({
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
                 onClick={handleToggleSound}
-                className={`p-1.5 rounded-xl border transition-all cursor-pointer flex-none ${
+                className={`hidden sm:flex p-1.5 rounded-xl border transition-all cursor-pointer flex-none ${
                   soundActive
                     ? 'border-orange-500/50 bg-orange-500/15 text-orange-400'
                     : 'border-white/10 text-slate-400 hover:text-slate-200'
@@ -394,7 +404,7 @@ export const Header: React.FC<HeaderProps> = ({
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
                 onClick={resetPosition}
-                className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer flex-none"
+                className="hidden md:flex p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer flex-none"
                 title="بازنشانی موقعیت منوی شناور به مرکز"
               >
                 <RotateCcw className="w-3.5 h-3.5" />

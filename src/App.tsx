@@ -127,7 +127,7 @@ export default function App() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Snapshots in Memory for instant Save & Resume
@@ -1178,7 +1178,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${themeClasses.stageBg}`}
+      className={`h-screen h-[100dvh] flex flex-col overflow-hidden transition-colors duration-300 ${themeClasses.stageBg}`}
     >
       {/* Fixed Top-Right Hamburger Menu with Memory Storage, Resume & Full App Features */}
       <HamburgerMenu
@@ -1204,7 +1204,7 @@ export default function App() {
       />
 
       {/* Floating Draggable Top Toolbar */}
-      <div className="w-full flex justify-center py-2 px-3 z-30 pointer-events-none">
+      <div className="flex-none w-full flex justify-center py-2 pl-3 pr-14 md:pr-3 z-30 pointer-events-none">
         <Header
           state={state}
           editorTheme={editorTheme}
@@ -1235,32 +1235,30 @@ export default function App() {
       {/* Main Studio Workspace: Sidebar (Controls) + Center Viewport (Catalog Stage) */}
       <div className="flex-1 flex flex-col md:flex-row min-h-0 relative">
         {/* Editor Settings Sidebar with Smooth Animated Tabs */}
-        <aside
-          className={`w-full md:w-96 lg:w-[410px] flex flex-col flex-none z-10 transition-all duration-300 ${
-            themeClasses.sidebarBg
-          } ${
-            mobileDrawerOpen ? 'max-h-[60vh] md:max-h-none' : 'max-h-12 md:max-h-none'
-          }`}
+        {/* Mobile tools drawer handle (in flow); on desktop the sidebar is always visible */}
+        <div
+          onClick={() => {
+            soundEffects.playPop();
+            setMobileDrawerOpen(!mobileDrawerOpen);
+          }}
+          className="md:hidden flex-none flex items-center justify-between px-3 py-2.5 bg-black/20 dark:bg-white/5 border-b border-white/10 text-xs font-bold text-orange-400 cursor-pointer"
         >
-          {/* Mobile drawer toggle */}
-          <div
-            onClick={() => {
-              soundEffects.playPop();
-              setMobileDrawerOpen(!mobileDrawerOpen);
-            }}
-            className="md:hidden flex items-center justify-between p-3 bg-black/10 dark:bg-white/5 border-b border-inherit cursor-pointer"
-          >
-            <span className="text-xs font-bold text-orange-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{mobileDrawerOpen ? 'بستن پنل ابزارها' : 'باز کردن منو و ابزارها'}</span>
-            </span>
-            {mobileDrawerOpen ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronUp className="w-4 h-4" />
-            )}
-          </div>
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{mobileDrawerOpen ? 'بستن پنل ابزارها' : 'باز کردن منو و ابزارها'}</span>
+          </span>
+          {mobileDrawerOpen ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronUp className="w-4 h-4" />
+          )}
+        </div>
 
+        <aside
+          className={`absolute inset-x-0 bottom-0 md:static flex flex-col flex-none transition-all duration-300 overflow-hidden z-30 md:z-10 rounded-t-2xl md:rounded-none shadow-2xl md:shadow-none md:w-96 lg:w-[410px] ${
+            themeClasses.sidebarBg
+          } ${mobileDrawerOpen ? 'h-[55%] border-t border-white/10' : 'h-0'} md:h-full md:border-0`}
+        >
           {/* Navigation Tabs Header with Colorful Icons and Fluid Indicator */}
           <div className="flex items-center border-b border-inherit bg-black/10 dark:bg-white/5 overflow-x-auto no-scrollbar flex-none px-2 py-1.5 gap-1">
             {TABS.map((tab) => {
