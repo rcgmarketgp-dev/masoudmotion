@@ -114,6 +114,79 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
     return () => window.removeEventListener('keydown', handleKey);
   }, [cur, total]);
 
+  const getFullscreenVariants = (): Variants => {
+    const tr = state.nav.tr;
+    switch (tr) {
+      case 'flip':
+        return {
+          initial: { opacity: 0, rotateY: direction > 0 ? 80 : -80, transformOrigin: direction > 0 ? 'right center' : 'left center', transformPerspective: 1400, scale: 0.95 },
+          animate: { opacity: 1, rotateY: 0, transformPerspective: 1400, scale: 1, transition: { duration: 0.65, ease: [0.25, 1, 0.5, 1] as const } },
+          exit: { opacity: 0, rotateY: direction > 0 ? -80 : 80, transformOrigin: direction > 0 ? 'left center' : 'right center', transformPerspective: 1400, scale: 0.95, transition: { duration: 0.5 } },
+        };
+      case 'curl':
+        return {
+          initial: { opacity: 0, rotateZ: direction > 0 ? -12 : 12, rotateY: direction > 0 ? 65 : -65, transformOrigin: direction > 0 ? 'top right' : 'top left', transformPerspective: 1200, scale: 0.92 },
+          animate: { opacity: 1, rotateZ: 0, rotateY: 0, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
+          exit: { opacity: 0, rotateZ: direction > 0 ? 12 : -12, rotateY: direction > 0 ? -65 : 65, scale: 0.92, transition: { duration: 0.45 } },
+        };
+      case 'cube':
+        return {
+          initial: { opacity: 0, rotateY: direction > 0 ? 90 : -90, x: direction > 0 ? 120 : -120, transformPerspective: 1500 },
+          animate: { opacity: 1, rotateY: 0, x: 0, transformPerspective: 1500, transition: { duration: 0.6, ease: [0.2, 0.8, 0.2, 1] as const } },
+          exit: { opacity: 0, rotateY: direction > 0 ? -90 : 90, x: direction > 0 ? -120 : 120, transformPerspective: 1500, transition: { duration: 0.5 } },
+        };
+      case 'magazine':
+        return {
+          initial: { opacity: 0, rotateY: direction > 0 ? 55 : -55, transformOrigin: direction > 0 ? 'right center' : 'left center', transformPerspective: 1300, scale: 0.96 },
+          animate: { opacity: 1, rotateY: 0, scale: 1, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const } },
+          exit: { opacity: 0, rotateY: direction > 0 ? -55 : 55, scale: 0.96, transition: { duration: 0.45 } },
+        };
+      case 'stack':
+        return {
+          initial: { opacity: 0, y: direction > 0 ? 60 : -60, scale: 0.88, rotate: direction > 0 ? 4 : -4 },
+          animate: { opacity: 1, y: 0, scale: 1, rotate: 0, transition: { type: 'spring', damping: 22, stiffness: 260 } },
+          exit: { opacity: 0, y: direction > 0 ? -50 : 50, scale: 1.05, transition: { duration: 0.35 } },
+        };
+      case 'slide':
+        return {
+          initial: { opacity: 0, x: direction * -80 },
+          animate: { opacity: 1, x: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const } },
+          exit: { opacity: 0, x: direction * 80, transition: { duration: 0.35 } },
+        };
+      case 'zoom':
+        return {
+          initial: { opacity: 0, scale: 0.85 },
+          animate: { opacity: 1, scale: 1, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const } },
+          exit: { opacity: 0, scale: 1.08, transition: { duration: 0.35 } },
+        };
+      case 'rise':
+        return {
+          initial: { opacity: 0, y: 50, scale: 0.96 },
+          animate: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 22, stiffness: 280 } },
+          exit: { opacity: 0, y: -40, scale: 0.98, transition: { duration: 0.35 } },
+        };
+      case 'soft-scale':
+        return {
+          initial: { opacity: 0, scale: 0.95 },
+          animate: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: 'easeOut' as const } },
+          exit: { opacity: 0, scale: 0.98, transition: { duration: 0.3 } },
+        };
+      case 'none':
+        return {
+          initial: { opacity: 1 },
+          animate: { opacity: 1 },
+          exit: { opacity: 1 },
+        };
+      case 'fade':
+      default:
+        return {
+          initial: { opacity: 0 },
+          animate: { opacity: 1, transition: { duration: 0.35, ease: 'easeInOut' as const } },
+          exit: { opacity: 0, transition: { duration: 0.25 } },
+        };
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-between p-4 overflow-hidden select-none"
@@ -175,10 +248,14 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={cur}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                variants={getFullscreenVariants()}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{
+                  duration: state.nav.tr === 'none' ? 0 : 0.55,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className="w-full h-full"
               >
                 <CatalogPageRenderer

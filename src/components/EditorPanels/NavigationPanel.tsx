@@ -6,6 +6,7 @@ import {
   NavPosition,
   NavStyle,
   TransitionEffect,
+  ElementAnimationPreset,
 } from '../../types/catalog';
 import {
   Compass,
@@ -31,13 +32,130 @@ import {
   Menu as MenuIcon,
   ChevronRight,
   ChevronLeft,
+  Zap,
+  Activity,
+  Heart,
+  Feather,
+  Flame,
+  MousePointerClick,
+  CheckCircle2,
+  Sparkles as SparklesIcon,
 } from 'lucide-react';
 import { soundEffects } from '../../utils/soundEffects';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 
+export interface ElementAnimationPresetDef {
+  id: ElementAnimationPreset;
+  title: string;
+  desc: string;
+  badge: string;
+  gradient: string;
+  icon: React.ReactNode;
+  cssClass: string;
+}
+
+export const ELEMENT_ANIMATION_PRESETS: ElementAnimationPresetDef[] = [
+  {
+    id: 'soft-entry',
+    title: 'ورود نرم',
+    desc: 'ظهور تدریجی و آرام با فید و صعود ملایم',
+    badge: 'Fade + Rise',
+    gradient: 'from-blue-500 to-indigo-600',
+    icon: <Feather className="w-4 h-4 text-blue-400" />,
+    cssClass: 'animate-soft-entry',
+  },
+  {
+    id: 'turbulent',
+    title: 'ظهور متلاطم و فنری',
+    desc: 'جهش ارتجاعی فنری پرانرژی با تکان ملایم',
+    badge: 'Spring Bouncy',
+    gradient: 'from-orange-500 to-amber-500',
+    icon: <Zap className="w-4 h-4 text-orange-400" />,
+    cssClass: 'animate-turbulent-spring',
+  },
+  {
+    id: 'gentle-shake',
+    title: 'لرزش ملایم',
+    desc: 'لرزش ظریف دوره‌ای برای جلب توجه مخاطب',
+    badge: 'Gentle Wobble',
+    gradient: 'from-fuchsia-500 to-pink-500',
+    icon: <Activity className="w-4 h-4 text-fuchsia-400" />,
+    cssClass: 'animate-gentle-shake',
+  },
+  {
+    id: 'pulse',
+    title: 'پالس ضربانی قلب',
+    desc: 'نبض ریتمیک منظم همراه با درخشش هاله',
+    badge: 'Rhythmic Pulse',
+    gradient: 'from-rose-500 to-red-600',
+    icon: <Heart className="w-4 h-4 text-rose-400" />,
+    cssClass: 'animate-pulse-glow',
+  },
+  {
+    id: 'spin-scale',
+    title: 'چرخش و بزرگ‌نمایی',
+    desc: 'چرخش پرشتاب ۳۶۰ درجه‌ای با بزرگ‌نمایی',
+    badge: '360 Spin & Scale',
+    gradient: 'from-purple-500 to-violet-600',
+    icon: <RotateCcw className="w-4 h-4 text-purple-400" />,
+    cssClass: 'animate-spin-scale',
+  },
+  {
+    id: 'glow-slide',
+    title: 'لغزش درخشان نئونی',
+    desc: 'حرکت اسلایدی سریع همراه با شیب نورانی',
+    badge: 'Neon Glow Slide',
+    gradient: 'from-cyan-500 to-blue-600',
+    icon: <Flame className="w-4 h-4 text-cyan-400" />,
+    cssClass: 'animate-glow-slide',
+  },
+  {
+    id: 'float',
+    title: 'شناور معلق در فضا',
+    desc: 'موج مداوم و شناور بدون توقف',
+    badge: 'Continuous Cloud',
+    gradient: 'from-teal-500 to-emerald-600',
+    icon: <Sparkles className="w-4 h-4 text-teal-400" />,
+    cssClass: 'animate-float-slow',
+  },
+  {
+    id: 'hover-lift',
+    title: 'معلق شدن با هاور',
+    desc: 'واکنش نرم به حرکت ماوس و ارتقای لایه',
+    badge: 'Hover Elevation',
+    gradient: 'from-amber-400 to-orange-500',
+    icon: <MousePointerClick className="w-4 h-4 text-amber-300" />,
+    cssClass: 'hover:-translate-y-2',
+  },
+  {
+    id: 'glass-fade',
+    title: 'ورود شیشه‌ای بلورین',
+    desc: 'پدیدار شدن با بلور شیشه‌ای و مقیاس نرم',
+    badge: 'Glass Morphism',
+    gradient: 'from-indigo-500 to-purple-600',
+    icon: <Layers className="w-4 h-4 text-indigo-400" />,
+    cssClass: 'animate-glass-fade',
+  },
+  {
+    id: 'none',
+    title: 'بدون انیمیشن (ثابت)',
+    desc: 'ایستا، بدون حرکت و تغییر',
+    badge: 'Static',
+    gradient: 'from-slate-600 to-slate-700',
+    icon: <Check className="w-4 h-4 text-slate-400" />,
+    cssClass: '',
+  },
+];
+
 interface NavigationPanelProps {
   state: CatalogState;
+  currentPageIndex?: number;
+  selectedBlockId?: string;
+  selectedBlockIds?: string[];
   onUpdateState: (updater: (prev: CatalogState) => CatalogState) => void;
+  onApplyAnimationToBlock?: (blockId: string, anim: ElementAnimationPreset) => void;
+  onApplyAnimationToAllBlocks?: (anim: ElementAnimationPreset) => void;
+  onBatchApplyAnimation?: (anim: ElementAnimationPreset) => void;
   onAddTocPage: () => void;
   onOpenCanvaModal?: () => void;
   onInsertCanvaToc?: (style: 'journal' | 'cards' | 'minimal') => void;
@@ -45,7 +163,13 @@ interface NavigationPanelProps {
 
 export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   state,
+  currentPageIndex = 0,
+  selectedBlockId,
+  selectedBlockIds = [],
   onUpdateState,
+  onApplyAnimationToBlock,
+  onApplyAnimationToAllBlocks,
+  onBatchApplyAnimation,
   onAddTocPage,
   onOpenCanvaModal,
   onInsertCanvaToc,
@@ -55,10 +179,16 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   // Live Animation Preview State
   const [previewKey, setPreviewKey] = useState(0);
-  const [previewTarget, setPreviewTarget] = useState<'page' | 'menu' | 'navbar'>('page');
+  const [previewTarget, setPreviewTarget] = useState<'page' | 'preset' | 'menu' | 'navbar'>('page');
+  const [activePresetPreview, setActivePresetPreview] = useState<ElementAnimationPreset>('soft-entry');
   const [isLooping, setIsLooping] = useState(true);
   const [previewSpeed, setPreviewSpeed] = useState<number>(1);
   const [activeNavDot, setActiveNavDot] = useState(1);
+
+  // Active selected block information
+  const currentPage = state.pg[currentPageIndex] || state.pg[0];
+  const selectedBlock = currentPage?.bl.find((b) => b.id === selectedBlockId);
+  const selectedCount = selectedBlockIds?.length || (selectedBlockId ? 1 : 0);
 
   const updateNav = (updates: Partial<typeof nav>) => {
     onUpdateState((prev) => ({
@@ -77,6 +207,19 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
     setPreviewKey((k) => k + 1);
   };
 
+  const handleApplyPreset = (presetId: ElementAnimationPreset) => {
+    setActivePresetPreview(presetId);
+    setPreviewTarget('preset');
+    setPreviewKey((k) => k + 1);
+    soundEffects.playAdd();
+
+    if (selectedCount > 1 && onBatchApplyAnimation) {
+      onBatchApplyAnimation(presetId);
+    } else if (selectedBlockId && onApplyAnimationToBlock) {
+      onApplyAnimationToBlock(selectedBlockId, presetId);
+    }
+  };
+
   // Auto-loop animation every 2.4s if enabled
   useEffect(() => {
     if (!isLooping) return;
@@ -85,12 +228,72 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
       setActiveNavDot((d) => (d >= 3 ? 0 : d + 1));
     }, 2400 / previewSpeed);
     return () => clearInterval(interval);
-  }, [isLooping, previewSpeed, nav.tr, previewTarget]);
+  }, [isLooping, previewSpeed, nav.tr, previewTarget, activePresetPreview]);
 
   // Compute animation transition based on selected nav.tr
   const getPreviewVariants = (tr: TransitionEffect): Variants => {
-    const dur = (tr === 'none' ? 0.01 : 0.45) / previewSpeed;
+    const dur = (tr === 'none' ? 0.01 : 0.5) / previewSpeed;
     switch (tr) {
+      case 'flip':
+        return {
+          initial: { opacity: 0, rotateY: 75, transformPerspective: 1000, scale: 0.92 },
+          animate: {
+            opacity: 1,
+            rotateY: 0,
+            transformPerspective: 1000,
+            scale: 1,
+            transition: { duration: dur, ease: [0.25, 1, 0.5, 1] as const },
+          },
+          exit: { opacity: 0, rotateY: -75, scale: 0.92, transition: { duration: dur * 0.7 } },
+        };
+      case 'curl':
+        return {
+          initial: { opacity: 0, rotateZ: -10, rotateY: 60, transformPerspective: 1000, scale: 0.9 },
+          animate: {
+            opacity: 1,
+            rotateZ: 0,
+            rotateY: 0,
+            scale: 1,
+            transition: { duration: dur, ease: [0.22, 1, 0.36, 1] as const },
+          },
+          exit: { opacity: 0, rotateZ: 10, rotateY: -60, scale: 0.9, transition: { duration: dur * 0.7 } },
+        };
+      case 'cube':
+        return {
+          initial: { opacity: 0, rotateY: 85, x: 60, transformPerspective: 1200 },
+          animate: {
+            opacity: 1,
+            rotateY: 0,
+            x: 0,
+            transformPerspective: 1200,
+            transition: { duration: dur, ease: [0.2, 0.8, 0.2, 1] as const },
+          },
+          exit: { opacity: 0, rotateY: -85, x: -60, transition: { duration: dur * 0.7 } },
+        };
+      case 'magazine':
+        return {
+          initial: { opacity: 0, rotateY: 50, scale: 0.95, transformPerspective: 1000 },
+          animate: {
+            opacity: 1,
+            rotateY: 0,
+            scale: 1,
+            transformPerspective: 1000,
+            transition: { duration: dur, ease: [0.16, 1, 0.3, 1] as const },
+          },
+          exit: { opacity: 0, rotateY: -50, scale: 0.95, transition: { duration: dur * 0.7 } },
+        };
+      case 'stack':
+        return {
+          initial: { opacity: 0, y: 40, scale: 0.88, rotate: 3 },
+          animate: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            rotate: 0,
+            transition: { type: 'spring', damping: 20, stiffness: 260 },
+          },
+          exit: { opacity: 0, y: -30, scale: 1.05, transition: { duration: dur * 0.7 } },
+        };
       case 'slide':
         return {
           initial: { opacity: 0, x: 50, scale: 1 },
@@ -122,17 +325,6 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
             transition: { type: 'spring', damping: 20, stiffness: 260 },
           },
           exit: { opacity: 0, y: -25, transition: { duration: dur * 0.7 } },
-        };
-      case 'flip':
-        return {
-          initial: { opacity: 0, rotateY: 60, scale: 0.9 },
-          animate: {
-            opacity: 1,
-            rotateY: 0,
-            scale: 1,
-            transition: { duration: dur, ease: [0.22, 1, 0.36, 1] as const },
-          },
-          exit: { opacity: 0, rotateY: -45, transition: { duration: dur * 0.7 } },
         };
       case 'soft-scale':
         return {
@@ -185,13 +377,17 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   };
 
   const transitionLabels: Record<TransitionEffect, string> = {
-    fade: 'محو و پیدایش (Fade)',
-    slide: 'لغزش افقی (Slide)',
-    zoom: 'زوم سینمایی (Zoom)',
+    flip: 'ورق زدن ۳ بعدی کتابی (3D Flip)',
+    curl: 'پیچش گوشه برگه و مجله (Page Curl)',
+    cube: 'چرخش مکعب ۳ بعدی (Cube 3D)',
+    magazine: 'ورق زدن ژورنال لوکس (Magazine Spread)',
+    stack: 'اسلاید کارتی پشته‌ای (Deck Stack)',
+    slide: 'لغزش افقی پیوسته (Slide)',
+    zoom: 'زوم سینمایی پروازی (Cinematic Zoom)',
     rise: 'صعود از پایین (Rise)',
-    flip: 'ورق خوردن ۳ بعدی (Flip)',
-    'soft-scale': 'مقیاس نرم (Soft-Scale)',
-    none: 'بدون انیمیشن (Instant)',
+    fade: 'محو و پیدایش ملایم (Fade)',
+    'soft-scale': 'مقیاس نرم و ارتجاعی (Soft-Scale)',
+    none: 'تعویض آنی (Instant)',
   };
 
   return (
@@ -252,15 +448,15 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           </div>
         </div>
 
-        {/* Preview Mode Selector Tabs */}
-        <div className="grid grid-cols-3 gap-1 bg-black/40 p-1 rounded-2xl border border-white/10 text-[11px] font-bold z-10">
+        {/* Preview Mode Selector Tabs (4 Modes) */}
+        <div className="grid grid-cols-4 gap-1 bg-black/40 p-1 rounded-2xl border border-white/10 text-[10px] font-bold z-10">
           <button
             onClick={() => {
               soundEffects.playClick();
               setPreviewTarget('page');
               setPreviewKey((k) => k + 1);
             }}
-            className={`py-1.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-1 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
               previewTarget === 'page'
                 ? 'bg-orange-500 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
@@ -272,10 +468,25 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           <button
             onClick={() => {
               soundEffects.playClick();
+              setPreviewTarget('preset');
+              setPreviewKey((k) => k + 1);
+            }}
+            className={`py-1.5 px-1 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              previewTarget === 'preset'
+                ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Zap className="w-3 h-3" />
+            <span>پیش‌تنظیم المان</span>
+          </button>
+          <button
+            onClick={() => {
+              soundEffects.playClick();
               setPreviewTarget('menu');
               setPreviewKey((k) => k + 1);
             }}
-            className={`py-1.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-1 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
               previewTarget === 'menu'
                 ? 'bg-purple-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
@@ -290,7 +501,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
               setPreviewTarget('navbar');
               setPreviewKey((k) => k + 1);
             }}
-            className={`py-1.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-1 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 ${
               previewTarget === 'navbar'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
@@ -382,7 +593,59 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
             </AnimatePresence>
           )}
 
-          {/* 2. Menu Items Navigation Mode (Fade-in + Slide-in + Scale-up) */}
+          {/* 2. Element Animation Preset Target Mode (پیش‌تنظیمات انیمیشنی المان‌ها) */}
+          {previewTarget === 'preset' && (
+            <div
+              key={`preset-preview-${activePresetPreview}-${previewKey}`}
+              onClick={handleReplay}
+              className={`w-full max-w-[280px] p-3.5 rounded-2xl shadow-xl flex flex-col gap-2.5 text-right border border-fuchsia-500/40 cursor-pointer relative ${
+                ELEMENT_ANIMATION_PRESETS.find((p) => p.id === activePresetPreview)?.cssClass || ''
+              }`}
+              style={{
+                backgroundColor: c.bg || '#1e293b',
+                color: c.fg || '#ffffff',
+              }}
+              title="کلیک برای پخش مجدد انیمیشن المان"
+            >
+              {/* Badge & Active Preset Indicator */}
+              <div className="flex items-center justify-between pb-2 border-b border-current/15">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black text-white shadow-sm flex items-center gap-1 bg-gradient-to-r from-fuchsia-600 to-pink-600">
+                  <Zap className="w-2.5 h-2.5" />
+                  <span>
+                    {ELEMENT_ANIMATION_PRESETS.find((p) => p.id === activePresetPreview)?.title || 'پیش‌تنظیم المان'}
+                  </span>
+                </span>
+                <span className="text-[10px] font-mono font-bold text-fuchsia-300">
+                  {ELEMENT_ANIMATION_PRESETS.find((p) => p.id === activePresetPreview)?.badge}
+                </span>
+              </div>
+
+              {/* Sample Element Body */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0 bg-gradient-to-tr from-fuchsia-500 to-pink-500 text-white"
+                >
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <h4 className="text-xs font-black truncate">
+                    {selectedBlock ? `المان: ${selectedBlock.t}` : 'کارت کاتالوگ نمونه'}
+                  </h4>
+                  <p className="text-[10px] opacity-75 line-clamp-1">
+                    {ELEMENT_ANIMATION_PRESETS.find((p) => p.id === activePresetPreview)?.desc}
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer info */}
+              <div className="flex items-center justify-between pt-1 border-t border-current/10 text-[9px] opacity-75 font-semibold">
+                <span>تست زنده روی المان</span>
+                <span className="text-fuchsia-400 font-bold">کلیک روی هر پیش‌تنظیم در پایین</span>
+              </div>
+            </div>
+          )}
+
+          {/* 3. Menu Items Navigation Mode (Fade-in + Slide-in + Scale-up) */}
           {previewTarget === 'menu' && (
             <div className="w-full max-w-[280px] flex flex-col gap-1.5 z-10">
               <div className="flex items-center justify-between pb-1 px-1 text-[10px] text-purple-300 font-bold">
@@ -431,7 +694,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
             </div>
           )}
 
-          {/* 3. Navigation Bar Live Miniature Mode */}
+          {/* 4. Navigation Bar Live Miniature Mode */}
           {previewTarget === 'navbar' && (
             <div className="flex flex-col items-center gap-3 w-full max-w-[280px] z-10">
               <span className="text-[10px] text-slate-300 font-bold opacity-80">
@@ -557,16 +820,160 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           </div>
 
           <div className="flex items-center gap-1 font-semibold text-slate-300">
-            <span>افکت فعلی:</span>
-            <span className="text-orange-400 font-bold">
-              {transitionLabels[nav.tr]}
+            <span>
+              {previewTarget === 'preset' ? 'پیش‌تنظیم فعال:' : 'افکت تعویض صفحه:'}
+            </span>
+            <span className="text-orange-400 font-bold truncate max-w-[140px]">
+              {previewTarget === 'preset'
+                ? ELEMENT_ANIMATION_PRESETS.find((p) => p.id === activePresetPreview)?.title
+                : transitionLabels[nav.tr]}
             </span>
           </div>
         </div>
       </section>
 
+      {/* ========================================================
+          NEW SECTION: ELEMENT ANIMATION PRESETS (پیش‌تنظیمات انیمیشنی المان‌ها)
+          ======================================================== */}
+      <section className="flex flex-col gap-3 p-4 rounded-3xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/5 to-slate-900/40 shadow-lg">
+        <div className="flex items-center justify-between border-b border-current/15 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-pink-500 flex items-center justify-center text-white shadow-md">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <b className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400">
+                  پیش‌تنظیمات انیمیشنی المان‌ها (Animation Presets)
+                </b>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">
+                  ۱-Click
+                </span>
+              </div>
+              <span className="text-[10px] opacity-70">
+                اعمال مستقیم روی المان انتخاب‌شده با یک کلیک و تست زنده
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Selected Block Info or Friendly Guide Banner */}
+        <div
+          className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-2.5 ${
+            selectedCount > 0
+              ? 'bg-fuchsia-500/15 border-fuchsia-500/40 text-fuchsia-200'
+              : 'bg-black/10 dark:bg-white/5 border-current/10 opacity-80'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 text-xs min-w-0">
+            <span
+              className={`w-3 h-3 rounded-full shrink-0 ${
+                selectedCount > 0 ? 'bg-fuchsia-400 animate-ping' : 'bg-slate-500'
+              }`}
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold truncate">
+                {selectedCount === 1
+                  ? `المان فعال: ${selectedBlock?.t === 'h' ? 'تیتر' : selectedBlock?.t === 'prod' ? 'کارت محصول' : selectedBlock?.t === 'btn' ? 'دکمه تعاملی' : selectedBlock?.t === 'img' ? 'تصویر' : selectedBlock?.t === 'icon' ? 'آیکون متحرک' : 'عنصر کاتالوگ'}`
+                  : selectedCount > 1
+                  ? `${selectedCount} المان انتخاب شده`
+                  : 'هیچ المانی انتخاب نشده است'}
+              </span>
+              <span className="text-[10px] opacity-75 truncate">
+                {selectedCount > 0
+                  ? selectedBlock?.anim
+                    ? `انیمیشن فعلی: ${ELEMENT_ANIMATION_PRESETS.find((p) => p.id === selectedBlock.anim)?.title || selectedBlock.anim}`
+                    : 'بدون انیمیشن (کلیک روی هر گزینه برای اعمال آنی)'
+                  : 'روی یک المان در صفحه کلیک کنید، یا روی دکمه‌های زیر برای تست بزنید'}
+              </span>
+            </div>
+          </div>
+
+          {selectedCount > 0 && selectedBlock?.anim && selectedBlock.anim !== 'none' && (
+            <button
+              onClick={() => handleApplyPreset('none')}
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-red-500/20 text-slate-300 hover:text-red-300 border border-white/15 cursor-pointer transition-all shrink-0"
+              title="حذف انیمیشن از این المان"
+            >
+              حذف افکت
+            </button>
+          )}
+        </div>
+
+        {/* Grid of Preset Cards */}
+        <div className="grid grid-cols-2 gap-2">
+          {ELEMENT_ANIMATION_PRESETS.map((preset) => {
+            const isSelected =
+              (selectedBlock && selectedBlock.anim === preset.id) ||
+              (!selectedBlock && activePresetPreview === preset.id);
+
+            return (
+              <motion.button
+                key={preset.id}
+                whileHover={{ scale: 1.03, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => handleApplyPreset(preset.id)}
+                className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex flex-col gap-1.5 relative group shadow-sm ${
+                  isSelected
+                    ? 'border-fuchsia-500 bg-fuchsia-500/20 ring-2 ring-fuchsia-500/40 shadow-md shadow-fuchsia-500/20'
+                    : 'border-current/15 hover:border-fuchsia-500/40 bg-black/5 dark:bg-white/5'
+                }`}
+              >
+                {/* Header with Icon and Badge */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center shadow-sm bg-gradient-to-tr ${preset.gradient} text-white`}
+                    >
+                      {preset.icon}
+                    </div>
+                    <b className={`text-xs ${isSelected ? 'text-fuchsia-300 font-black' : ''}`}>
+                      {preset.title}
+                    </b>
+                  </div>
+                  {isSelected && (
+                    <span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" />
+                  )}
+                </div>
+
+                <p className="text-[10px] opacity-70 line-clamp-1">
+                  {preset.desc}
+                </p>
+
+                <div className="flex items-center justify-between pt-1 border-t border-current/10 text-[9px]">
+                  <span className="font-mono opacity-60 text-fuchsia-300">
+                    {preset.badge}
+                  </span>
+                  <span className="opacity-0 group-hover:opacity-100 text-fuchsia-400 font-bold transition-opacity">
+                    اعمال ➔
+                  </span>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* Global Page Action: Apply to all blocks */}
+        {onApplyAnimationToAllBlocks && (
+          <div className="pt-2 flex items-center gap-2">
+            <button
+              onClick={() => {
+                soundEffects.playAdd();
+                onApplyAnimationToAllBlocks(activePresetPreview);
+              }}
+              className="flex-1 py-2 px-3 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-black shadow-md cursor-pointer transition-all flex items-center justify-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>
+                اعمال «{ELEMENT_ANIMATION_PRESETS.find((p) => p.id === activePresetPreview)?.title}» روی تمام المان‌های این صفحه
+              </span>
+            </button>
+          </div>
+        )}
+      </section>
+
       {/* 1. Page Transition Animation Selection */}
-      <section className="flex flex-col gap-2.5">
+      <section className="flex flex-col gap-2.5 pt-3 border-t border-current/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold opacity-75">
             <Sparkles className="w-4 h-4 text-orange-500" />
@@ -576,12 +983,16 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { id: 'fade', label: 'محو و پیدایش (Fade)', desc: 'پدیدار شدن تدریجی و ملایم' },
-            { id: 'slide', label: 'لغزش افقی (Slide)', desc: 'حرکت اسلایدی افقی جذاب' },
-            { id: 'zoom', label: 'زوم سینمایی (Zoom)', desc: 'بزرگ‌نمایی نرم صفحه جدید' },
+            { id: 'flip', label: 'ورق زدن ۳ بعدی (Flip)', desc: 'چرخش پرسپکتیو واقعی کتابی' },
+            { id: 'curl', label: 'ورق زدن مجله‌ای (Curl)', desc: 'پیچش گوشه برگه و تا خوردن' },
+            { id: 'cube', label: 'چرخش مکعبی (Cube 3D)', desc: 'گردش وجه سه‌بعدی صفحه' },
+            { id: 'magazine', label: 'ژورنال لوکس (Magazine)', desc: 'تاخوردگی با خط تا مرکزی' },
+            { id: 'stack', label: 'پشته کارتی (Deck Stack)', desc: 'اسلاید کارت‌ها با زاویه لایه‌ای' },
+            { id: 'slide', label: 'لغزش افقی (Slide)', desc: 'حرکت اسلایدی افقی پیوسته' },
+            { id: 'zoom', label: 'زوم پروازی (Zoom)', desc: 'بزرگ‌نمایی نرم صفحه جدید' },
             { id: 'rise', label: 'صعود از پایین (Rise)', desc: 'بالا آمدن با فنریت ارتجاعی' },
-            { id: 'flip', label: 'ورق خوردن ۳ بعدی (Flip)', desc: 'چرخش پرسپکتیو واقعی' },
-            { id: 'soft-scale', label: 'مقیاس نرم (Scale)', desc: 'نوسان آرام و شیک' },
+            { id: 'fade', label: 'محو و پیدایش (Fade)', desc: 'پدیدار شدن تدریجی و ملایم' },
+            { id: 'soft-scale', label: 'مقیاس نرم (Scale)', desc: 'نوسان آرام و شیک ابعاد' },
             { id: 'none', label: 'بدون انیمیشن (Instant)', desc: 'تعویض آنی و بدون مکث' },
           ].map((tr) => {
             const isSelected = nav.tr === tr.id;
@@ -708,6 +1119,42 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 3.5 Quick Navigation Shortcuts & Bottom Menu Button */}
+      <section className="flex flex-col gap-3 pt-4 border-t border-current/10">
+        <div className="flex items-center gap-2 text-xs font-bold opacity-75">
+          <Zap className="w-4 h-4 text-amber-500" />
+          <span>منوی پرکاربرد و کلید منوی کاتالوگ:</span>
+        </div>
+
+        <div className="flex flex-col gap-2.5 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-current/10">
+          <label className="flex items-center justify-between cursor-pointer select-none text-xs">
+            <span className="font-semibold flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>نمایش نوار میانبرهای پرکاربرد (صفحه اول، میانه، پایانی)</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={nav.quickShortcutsEnabled !== false}
+              onChange={(e) => updateNav({ quickShortcutsEnabled: e.target.checked })}
+              className="w-4 h-4 rounded text-orange-500 accent-orange-500 cursor-pointer"
+            />
+          </label>
+
+          <label className="flex items-center justify-between cursor-pointer select-none text-xs pt-2 border-t border-current/10">
+            <span className="font-semibold flex items-center gap-1.5">
+              <MenuIcon className="w-3.5 h-3.5 text-orange-500" />
+              <span>کلید استاندارد منو در پایین کاتالوگ (با انیمیشن نرم)</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={nav.bottomMenuButtonEnabled !== false}
+              onChange={(e) => updateNav({ bottomMenuButtonEnabled: e.target.checked })}
+              className="w-4 h-4 rounded text-orange-500 accent-orange-500 cursor-pointer"
+            />
+          </label>
         </div>
       </section>
 

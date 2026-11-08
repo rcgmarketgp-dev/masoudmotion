@@ -25,6 +25,35 @@ interface BlockRendererProps {
   isInteractiveMode?: boolean;
 }
 
+const getAnimClass = (anim?: string) => {
+  switch (anim) {
+    case 'soft-entry':
+      return 'animate-soft-entry';
+    case 'turbulent':
+      return 'animate-turbulent-spring';
+    case 'gentle-shake':
+      return 'animate-gentle-shake';
+    case 'pulse':
+      return 'animate-pulse-glow';
+    case 'float':
+      return 'animate-float-slow';
+    case 'bounce':
+      return 'animate-bounce';
+    case 'wiggle':
+      return 'animate-wiggle-soft';
+    case 'spin-scale':
+      return 'animate-spin-scale';
+    case 'glow-slide':
+      return 'animate-glow-slide';
+    case 'hover-lift':
+      return 'hover:-translate-y-2 hover:shadow-xl transition-all duration-300';
+    case 'glass-fade':
+      return 'animate-glass-fade';
+    default:
+      return '';
+  }
+};
+
 export const BlockRenderer: React.FC<BlockRendererProps> = ({
   block,
   state,
@@ -711,7 +740,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
   return (
     <div
       onClick={handleClick}
-      className={`relative group rounded-xl transition-all duration-200 ${
+      className={`relative group rounded-xl transition-all duration-200 ${getAnimClass(block.anim)} ${
         isInteractiveMode && hasAction ? 'cursor-pointer hover:brightness-105' : 'cursor-pointer'
       } ${
         isSelected

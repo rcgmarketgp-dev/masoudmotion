@@ -325,12 +325,15 @@ export const INITIAL_CATALOG_STATE: CatalogState = {
     sh: 'round',
     tr: 'fade',
     mn: 'side',
+    quickShortcutsEnabled: true,
+    bottomMenuButtonEnabled: true,
   },
   pg: [
     {
       id: 'p_cover',
       t: 'جلد کاتالوگ',
       toc: false,
+      category: 'معرفی شرکت',
       bl: [
         { id: 'b_sp1', t: 'sp', ht: 40 },
         { id: 'b_lg', t: 'logo', w: 60, al: 'center' },

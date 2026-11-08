@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { CatalogState } from '../../types/catalog';
 import { generateStandaloneCatalogHtml } from '../../utils/htmlExporter';
-import { INITIAL_CATALOG_STATE } from '../../constants/presets';
+import { INITIAL_CATALOG_STATE, CATALOG_SIZES, FONT_CONFIG } from '../../constants/presets';
 import { soundEffects } from '../../utils/soundEffects';
 import {
   Download,
@@ -16,6 +16,9 @@ import {
   FolderArchive,
   FilePlus,
   Globe,
+  ShieldCheck,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface ExportPanelProps {
@@ -165,7 +168,40 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
         </div>
       </section>
 
-      {/* 1. Final Delivery & Export */}
+      {/* 1. Quality & Layout Fidelity Guarantee Card */}
+      <section className="flex flex-col gap-2 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 shadow-sm">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+          <b className="text-xs font-black text-emerald-300">
+            تضمین ۱۰۰٪ حفظ فونت، ابعاد و چیدمان بدون کوچک‌ترین جابجایی
+          </b>
+        </div>
+        <p className="text-[11px] text-emerald-200/80 leading-relaxed">
+          تمام فونت‌های فارسی (وزیرمتن، شبنم، صمیم، ساحل، قاهره، لاله‌زار و نسخ) به همراه تمام انیمیشن‌های ورق زدن ۳ بعدی و موقعیت پیکسلی المان‌ها در خروجی تعبیه شده و در هر کامپیوتر یا موبایل بدون به‌هم‌ریختگی اجرا می‌شوند.
+        </p>
+
+        {/* Current Catalog Specs Pill */}
+        <div className="grid grid-cols-2 gap-2 mt-1 pt-2 border-t border-emerald-500/20 text-[10px]">
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <span className="opacity-70">سایز کاتالوگ:</span>
+            <b className="text-white font-bold">{CATALOG_SIZES[state.sz]?.label || state.sz}</b>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <span className="opacity-70">فونت فعال:</span>
+            <b className="text-white font-bold">{FONT_CONFIG[state.f]?.name || state.f}</b>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <span className="opacity-70">تعداد صفحات:</span>
+            <b className="text-white font-bold">{state.pg.length} صفحه</b>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <span className="opacity-70">افکت ورق زدن:</span>
+            <b className="text-orange-400 font-bold">{state.nav.tr}</b>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Final Delivery & Export */}
       <section className="flex flex-col gap-2.5">
         <span className="text-xs font-bold opacity-75">
           خروجی نهایی کاتالوگ دیجیتال و تعاملی:

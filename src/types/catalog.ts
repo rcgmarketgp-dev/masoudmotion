@@ -22,9 +22,34 @@ export type DecorationStyle = 'cn' | 'bar' | 'side' | 'frm' | 'gradient' | 'no';
 export type NavStyle = 'arrows' | 'dots' | 'tabs' | 'line' | 'mini' | 'pill';
 export type NavPosition = 'top' | 'bottom';
 export type NavButtonShape = 'round' | 'square' | 'pill';
-export type TransitionEffect = 'fade' | 'slide' | 'zoom' | 'rise' | 'flip' | 'soft-scale' | 'none';
+export type TransitionEffect =
+  | 'flip'
+  | 'curl'
+  | 'cube'
+  | 'magazine'
+  | 'stack'
+  | 'slide'
+  | 'zoom'
+  | 'rise'
+  | 'fade'
+  | 'soft-scale'
+  | 'none';
 export type MenuStyle = 'side' | 'bottom' | 'center' | 'fullscreen';
 export type EditorUiTheme = 'dark-obsidian' | 'clean-ivory' | 'glass-modern' | 'vivid-creative';
+
+export type ElementAnimationPreset =
+  | 'none'
+  | 'soft-entry'
+  | 'turbulent'
+  | 'gentle-shake'
+  | 'pulse'
+  | 'float'
+  | 'spin-scale'
+  | 'glow-slide'
+  | 'hover-lift'
+  | 'glass-fade'
+  | 'bounce'
+  | 'wiggle';
 
 export type BlockType =
   | 'h'
@@ -67,8 +92,8 @@ export interface BaseBlock {
   actionTel?: string;         // Phone number (e.g. 0912...)
   actionEmail?: string;       // Email address
 
-  // Animation style
-  anim?: 'none' | 'float' | 'pulse' | 'bounce' | 'wiggle';
+  // Animation style preset
+  anim?: ElementAnimationPreset;
 }
 
 export interface IconBlock extends BaseBlock {
@@ -205,10 +230,20 @@ export type CatalogBlock =
   | ContactBlock
   | IconBlock;
 
+export interface FullPageLinkConfig {
+  enabled: boolean;
+  type: 'link' | 'page' | 'tel' | 'email';
+  url?: string;
+  targetPage?: number;
+  tooltip?: string;
+}
+
 export interface CatalogPage {
   id: string;
   t: string;
   toc: boolean;
+  category?: string; // Content Category in Navigation / TOC (e.g. محصولات، معرفی، گالری)
+  fullPageLink?: FullPageLinkConfig; // Full page clickable link overlay
   cols?: 1 | 2;
   bg?: 0 | 1 | 2 | 3;
   bgImage?: string;
@@ -225,6 +260,15 @@ export interface GlobalBranding {
   logoEnabled?: boolean;
   watermarkText?: string;
   watermarkEnabled?: boolean;
+}
+
+export interface QuickShortcutItem {
+  id: string;
+  title: string;
+  iconName?: string;
+  actionType: 'page' | 'link' | 'tel' | 'menu';
+  targetPage?: number;
+  url?: string;
 }
 
 export interface CatalogState {
@@ -245,6 +289,8 @@ export interface CatalogState {
     sh: NavButtonShape;
     tr: TransitionEffect;
     mn: MenuStyle;
+    quickShortcutsEnabled?: boolean; // منوی پرکاربرد در ناوبری
+    bottomMenuButtonEnabled?: boolean; // کلید منو در پایین کاتالوگ با سایز استاندارد
   };
   pg: CatalogPage[];
 }

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { CatalogBlock, CatalogPage, CatalogState } from '../../types/catalog';
 import { CATALOG_SIZES } from '../../constants/presets';
 import { BlockRenderer } from './BlockRenderer';
-import { Move, Lock } from 'lucide-react';
+import { Move, Lock, ExternalLink } from 'lucide-react';
 
 interface CatalogPageRendererProps {
   page: CatalogPage;
@@ -246,6 +246,40 @@ export const CatalogPageRenderer: React.FC<CatalogPageRendererProps> = ({
             <Move className="w-3 h-3" />
             <span>{isFreePage ? 'چیدمان آزاد (شناور)' : 'چیدمان ستونی'}</span>
           </button>
+        </div>
+      )}
+
+      {/* Full-Page Interactive Click Overlay (بهینه‌شده و تمام‌صفحه) */}
+      {page.fullPageLink?.enabled && (
+        <div
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('button, a, input, select, textarea, .block-drag-handle')) {
+              return;
+            }
+            if (page.fullPageLink?.type === 'page' && typeof page.fullPageLink?.targetPage === 'number') {
+              onNavigatePage?.(page.fullPageLink.targetPage);
+            } else if (page.fullPageLink?.type === 'tel' && page.fullPageLink?.url) {
+              window.location.href = `tel:${page.fullPageLink.url}`;
+            } else if (page.fullPageLink?.type === 'email' && page.fullPageLink?.url) {
+              window.location.href = `mailto:${page.fullPageLink.url}`;
+            } else if (page.fullPageLink?.url) {
+              const url = page.fullPageLink.url.startsWith('http')
+                ? page.fullPageLink.url
+                : `https://${page.fullPageLink.url}`;
+              window.open(url, '_blank');
+            }
+          }}
+          className="absolute inset-0 z-15 cursor-pointer group"
+          title={page.fullPageLink?.tooltip || 'کلیک برای باز کردن پیوند این صفحه'}
+        >
+          {/* Subtle floating link badge */}
+          <div className="absolute top-3.5 right-12 z-30 opacity-75 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md border border-white/20 backdrop-blur-md">
+            <ExternalLink className="w-3 h-3 text-orange-400" />
+            <span className="truncate max-w-[140px]">
+              {page.fullPageLink?.tooltip || 'لینک تمام‌صفحه'}
+            </span>
+          </div>
         </div>
       )}
 

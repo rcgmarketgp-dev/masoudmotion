@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "catalog": {
+      "title": "Catalog",
+      "description": "Smart catalog digital publication",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "pagesCount": { "type": "number" },
+        "catalogState": { "type": "object" },
+        "isPublic": { "type": "boolean" },
+        "updatedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/userProfile" },
+      "description": "User personal profiles"
+    },
+    "/users/{userId}/catalogs/{catalogId}": {
+      "schema": { "$ref": "#/entities/catalog" },
+      "description": "User cloud-synced catalogs"
+    },
+    "/public_catalogs/{catalogId}": {
+      "schema": { "$ref": "#/entities/catalog" },
+      "description": "Publicly published catalogs for sharing"
+    }
+  }
+}

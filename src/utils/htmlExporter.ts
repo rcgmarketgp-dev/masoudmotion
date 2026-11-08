@@ -27,6 +27,9 @@ export function generateStandaloneCatalogHtml(state: CatalogState): string {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Lalezar&family=Noto+Naskh+Arabic:wght@400;600;700&family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/shabnam-font@v5.0.1/dist/font-face.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/samim-font@v4.0.5/dist/font-face.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/sahel-font@v3.4.0/dist/font-face.css">
   <style>
     ${state.f === 'custom' && state.customFontUrl ? `
     @font-face {
@@ -320,20 +323,28 @@ export function generateStandaloneCatalogHtml(state: CatalogState): string {
     .nav-tab-btn { font-size: 12px; font-weight: 700; width: 28px !important; height: 28px !important; border-radius: 6px !important; }
     .nav-tab-btn.active { background: var(--ac) !important; color: #fff !important; }
     /* Transitions */
-    .trans-fade { animation: aniFade 0.45s ease-out; }
+    .trans-fade { animation: aniFade 0.4s ease-out; }
     .trans-slide-next { animation: aniSlideNext 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
     .trans-slide-prev { animation: aniSlidePrev 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
     .trans-zoom { animation: aniZoom 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
     .trans-rise { animation: aniRise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
-    .trans-flip { animation: aniFlip 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
-    .trans-soft-scale { animation: aniSoftScale 0.45s ease; }
+    .trans-flip { animation: aniFlip 0.65s cubic-bezier(0.25, 1, 0.5, 1); transform-origin: right center; }
+    .trans-curl { animation: aniCurl 0.6s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: top right; }
+    .trans-cube { animation: aniCube 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .trans-magazine { animation: aniMagazine 0.55s cubic-bezier(0.16, 1, 0.3, 1); transform-origin: right center; }
+    .trans-stack { animation: aniStack 0.5s cubic-bezier(0.2, 0.9, 0.3, 1); }
+    .trans-soft-scale { animation: aniSoftScale 0.4s ease; }
     @keyframes aniFade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes aniSlideNext { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes aniSlidePrev { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes aniZoom { from { opacity: 0; transform: scale(0.93); } to { opacity: 1; transform: scale(1); } }
-    @keyframes aniRise { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes aniFlip { from { opacity: 0; transform: perspective(1000px) rotateY(18deg); } to { opacity: 1; transform: perspective(1000px) rotateY(0deg); } }
-    @keyframes aniSoftScale { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+    @keyframes aniSlideNext { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes aniSlidePrev { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes aniZoom { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+    @keyframes aniRise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes aniFlip { from { opacity: 0; transform: perspective(1400px) rotateY(70deg) scale(0.95); } to { opacity: 1; transform: perspective(1400px) rotateY(0deg) scale(1); } }
+    @keyframes aniCurl { from { opacity: 0; transform: perspective(1200px) rotateZ(-10deg) rotateY(60deg) scale(0.92); } to { opacity: 1; transform: perspective(1200px) rotateZ(0deg) rotateY(0deg) scale(1); } }
+    @keyframes aniCube { from { opacity: 0; transform: perspective(1400px) rotateY(85deg) translateX(80px); } to { opacity: 1; transform: perspective(1400px) rotateY(0deg) translateX(0); } }
+    @keyframes aniMagazine { from { opacity: 0; transform: perspective(1300px) rotateY(50deg) scale(0.96); } to { opacity: 1; transform: perspective(1300px) rotateY(0deg) scale(1); } }
+    @keyframes aniStack { from { opacity: 0; transform: translateY(50px) rotate(3deg) scale(0.9); } to { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); } }
+    @keyframes aniSoftScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     /* Drawer / Modal TOC */
     .toc-modal {
       position: absolute;
@@ -566,8 +577,33 @@ export function generateStandaloneCatalogHtml(state: CatalogState): string {
         logoHtml = '<div style="position:absolute;z-index:25;pointer-events:none;opacity:' + (branding.logoOpacity != null ? branding.logoOpacity : 1) + ';width:' + (branding.logoWidth || 120) + 'px;' + posStyles + '"><img src="' + esc(branding.logoUrl) + '" style="max-height:48px;width:auto;object-fit:contain;" alt=""></div>';
       }
 
+      var fullPageLinkHtml = '';
+      if (p.fullPageLink && p.fullPageLink.enabled) {
+        var fType = p.fullPageLink.type || 'url';
+        var fClick = '';
+        if (fType === 'url' && p.fullPageLink.url) {
+          var targetAttr = p.fullPageLink.openInNewTab !== false ? '_blank' : '_self';
+          var fUrl = p.fullPageLink.url.startsWith('http') ? p.fullPageLink.url : ('https://' + p.fullPageLink.url);
+          fClick = 'onclick="window.open(\\'' + esc(fUrl) + '\\',\\'' + targetAttr + '\\');"';
+        } else if (fType === 'page' && p.fullPageLink.targetPageId) {
+          var targetIdx = STATE.pg.findIndex(function(x) { return x.id === p.fullPageLink.targetPageId; });
+          if (targetIdx >= 0) fClick = 'onclick="go(' + targetIdx + ');"';
+        } else if (fType === 'tel' && p.fullPageLink.url) {
+          fClick = 'onclick="window.location.href=\\'tel:' + esc(p.fullPageLink.url) + '\\';"';
+        } else if (fType === 'email' && p.fullPageLink.url) {
+          fClick = 'onclick="window.location.href=\\'mailto:' + esc(p.fullPageLink.url) + '\\';"';
+        }
+        var tooltip = p.fullPageLink.tooltip || 'پیوند تمام‌صفحه فعال است';
+        fullPageLinkHtml = '<div class="fullpage-link-overlay" ' + fClick + ' title="' + esc(tooltip) + '" style="position:absolute;inset:0;z-index:35;cursor:pointer;background:transparent;">' +
+          '<div style="position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:12px;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);color:#fff;font-size:11px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.2);">' +
+            '<span>🔗 ' + esc(tooltip) + '</span>' +
+          '</div>' +
+        '</div>';
+      }
+
       return '<div class="page-card" style="width:' + W + 'px;height:' + H + 'px;background:' + bg + ';color:' + fg + ';--sf:' + sf + ';position:relative;overflow:hidden;">' +
         logoHtml +
+        fullPageLinkHtml +
         (p.bgImage ? '<div style="position:absolute;inset:0;z-index:0;overflow:hidden;"><img src="' + esc(p.bgImage) + '" style="width:100%;height:100%;object-fit:' + (p.bgImageFit || 'cover') + ';" alt=""></div>' : '') +
         (!p.bgImage ? '<div class="cat-decor d-' + (STATE.dc || 'cn') + '"></div>' : '') +
         '<div class="page-body' + (p.cols === 2 ? ' cols-2' : '') + '" style="position:relative;z-index:10;">' +
@@ -620,13 +656,21 @@ export function generateStandaloneCatalogHtml(state: CatalogState): string {
         '<div class="toc-backdrop" data-go="close"></div>' +
         '<div class="toc-panel">' +
           '<div class="toc-title-header">' +
-            '<h4>فهرست صفحات</h4>' +
+            '<div>' +
+              '<h4 style="margin:0;font-size:16px;color:var(--ac);">فهرست و دسته‌بندی کاتالوگ</h4>' +
+              '<span style="font-size:11px;opacity:0.7;">' + STATE.pg.length + ' صفحه</span>' +
+            '</div>' +
             '<button class="toc-close-btn" data-go="close">✕</button>' +
           '</div>' +
           STATE.pg.map(function(p, i) {
+            var catBadge = p.category ? '<span style="font-size:10px;padding:2px 6px;border-radius:6px;background:color-mix(in srgb, var(--ac) 15%, transparent);color:var(--ac);margin-right:6px;">' + esc(p.category) + '</span>' : '';
+            var linkBadge = p.fullPageLink && p.fullPageLink.enabled ? '<span style="font-size:10px;margin-right:6px;">🔗</span>' : '';
             return '<button class="toc-nav-item' + (i === cur ? ' active' : '') + '" data-go="' + i + '">' +
-              '<span>' + esc(p.t) + '</span>' +
-              '<span class="toc-page-num">' + (i + 1) + '</span>' +
+              '<div style="display:flex;align-items:center;">' +
+                '<span class="toc-page-num" style="width:24px;display:inline-block;">' + (i + 1) + '</span>' +
+                '<span>' + esc(p.t) + '</span>' +
+              '</div>' +
+              '<div>' + linkBadge + catBadge + '</div>' +
             '</button>';
           }).join('') +
         '</div>' +

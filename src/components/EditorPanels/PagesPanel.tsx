@@ -9,6 +9,13 @@ import {
   Columns,
   Square,
   Layers,
+  Tag,
+  Link as LinkIcon,
+  ExternalLink,
+  Phone,
+  Mail,
+  Globe,
+  Compass,
 } from 'lucide-react';
 
 interface PagesPanelProps {
@@ -17,6 +24,16 @@ interface PagesPanelProps {
   onPageChange: (index: number) => void;
   onUpdateState: (updater: (prev: CatalogState) => CatalogState) => void;
 }
+
+const CATEGORY_PRESETS = [
+  'معرفی شرکت',
+  'محصولات',
+  'مشخصات فنی',
+  'گالری تصاویر',
+  'رضایت مشتریان',
+  'تماس با ما',
+  'پیشنهاد ویژه',
+];
 
 export const PagesPanel: React.FC<PagesPanelProps> = ({
   state,
@@ -164,6 +181,241 @@ export const PagesPanel: React.FC<PagesPanelProps> = ({
           />
           <span className="font-semibold">نمایش در فهرست مطالب (TOC)</span>
         </label>
+
+        {/* Page Content Category */}
+        <div className="flex flex-col gap-2 pt-2 border-t border-current/10">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold flex items-center gap-1.5 opacity-90">
+              <Tag className="w-3.5 h-3.5 text-orange-500" />
+              <span>دسته‌بندی محتوای این صفحه:</span>
+            </span>
+            {currentPage.category && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 font-bold">
+                {currentPage.category}
+              </span>
+            )}
+          </div>
+          <input
+            type="text"
+            placeholder="مثال: معرفی شرکت، محصولات، مشخصات فنی..."
+            value={currentPage.category || ''}
+            onChange={(e) => handleUpdateCurrentPage({ category: e.target.value })}
+            className="w-full px-3 py-1.5 rounded-xl border border-current/20 bg-black/10 dark:bg-white/5 text-xs font-semibold focus:outline-none focus:border-orange-500"
+          />
+          <div className="flex flex-wrap gap-1">
+            {CATEGORY_PRESETS.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleUpdateCurrentPage({ category: cat })}
+                className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer ${
+                  currentPage.category === cat
+                    ? 'bg-orange-500 text-white font-bold shadow-sm'
+                    : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 opacity-75'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Full-Page Interactive Link Overlay Configuration */}
+        <div className="flex flex-col gap-2.5 pt-2.5 border-t border-current/10 bg-amber-500/5 -mx-3.5 px-3.5 py-3 rounded-b-2xl border-b border-amber-500/20">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-xs font-bold cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={currentPage.fullPageLink?.enabled || false}
+                onChange={(e) =>
+                  handleUpdateCurrentPage({
+                    fullPageLink: {
+                      enabled: e.target.checked,
+                      type: currentPage.fullPageLink?.type || 'url',
+                      url: currentPage.fullPageLink?.url || 'https://',
+                      openInNewTab: currentPage.fullPageLink?.openInNewTab ?? true,
+                      tooltip: currentPage.fullPageLink?.tooltip || 'برای مشاهده کلیک کنید',
+                      targetPageId: currentPage.fullPageLink?.targetPageId,
+                    },
+                  })
+                }
+                className="w-4 h-4 rounded text-orange-500 accent-orange-500 cursor-pointer"
+              />
+              <span className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400">
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>پیوند تمام‌صفحه بهینه شده (Full-Page Link)</span>
+              </span>
+            </label>
+          </div>
+
+          <p className="text-[11px] opacity-70 leading-relaxed">
+            با فعال‌سازی این قابلیت، کاربر با کلیک روی هر نقطه از این صفحه کاتالوگ، مستقیماً به آدرس یا صفحه مشخص شده هدایت می‌شود.
+          </p>
+
+          {currentPage.fullPageLink?.enabled && (
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-amber-500/20 text-xs">
+              {/* Link Type Selector */}
+              <div className="flex flex-col gap-1">
+                <span className="opacity-75 font-semibold text-[11px]">نوع پیوند:</span>
+                <div className="grid grid-cols-4 gap-1">
+                  {[
+                    { id: 'url', label: 'وب‌سایت', icon: Globe },
+                    { id: 'page', label: 'پرش صفحه', icon: Compass },
+                    { id: 'tel', label: 'تماس', icon: Phone },
+                    { id: 'email', label: 'ایمیل', icon: Mail },
+                  ].map((t) => {
+                    const Icon = t.icon;
+                    const isSelected = (currentPage.fullPageLink?.type || 'url') === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() =>
+                          handleUpdateCurrentPage({
+                            fullPageLink: {
+                              ...currentPage.fullPageLink!,
+                              type: t.id as any,
+                            },
+                          })
+                        }
+                        className={`p-1.5 rounded-lg border text-[10px] font-bold flex flex-col items-center gap-1 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-500 text-white shadow-sm'
+                            : 'border-current/15 hover:border-orange-500/40 bg-black/5 dark:bg-white/5'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{t.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Target Input based on type */}
+              {(currentPage.fullPageLink.type === 'url' || !currentPage.fullPageLink.type) && (
+                <div className="flex flex-col gap-1">
+                  <span className="opacity-75 font-semibold text-[11px]">آدرس اینترنتی مقصد (URL):</span>
+                  <input
+                    type="url"
+                    dir="ltr"
+                    placeholder="https://example.com/product"
+                    value={currentPage.fullPageLink.url || ''}
+                    onChange={(e) =>
+                      handleUpdateCurrentPage({
+                        fullPageLink: {
+                          ...currentPage.fullPageLink!,
+                          url: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3 py-1.5 rounded-xl border border-current/20 bg-black/10 dark:bg-white/5 font-mono text-xs focus:outline-none focus:border-orange-500 text-left"
+                  />
+                  <label className="flex items-center gap-2 mt-1 text-[11px] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={currentPage.fullPageLink.openInNewTab !== false}
+                      onChange={(e) =>
+                        handleUpdateCurrentPage({
+                          fullPageLink: {
+                            ...currentPage.fullPageLink!,
+                            openInNewTab: e.target.checked,
+                          },
+                        })
+                      }
+                      className="w-3.5 h-3.5 accent-orange-500"
+                    />
+                    <span>باز شدن در برگه جدید مرورگر (New Tab)</span>
+                  </label>
+                </div>
+              )}
+
+              {currentPage.fullPageLink.type === 'page' && (
+                <div className="flex flex-col gap-1">
+                  <span className="opacity-75 font-semibold text-[11px]">صفحه مقصد در کاتالوگ:</span>
+                  <select
+                    value={currentPage.fullPageLink.targetPageId || ''}
+                    onChange={(e) =>
+                      handleUpdateCurrentPage({
+                        fullPageLink: {
+                          ...currentPage.fullPageLink!,
+                          targetPageId: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3 py-1.5 rounded-xl border border-current/20 bg-black/10 dark:bg-white/5 font-semibold text-xs focus:outline-none focus:border-orange-500"
+                  >
+                    <option value="">-- انتخاب صفحه مقصد --</option>
+                    {state.pg.map((p, idx) => (
+                      <option key={p.id} value={p.id}>
+                        صفحه {idx + 1}: {p.t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {currentPage.fullPageLink.type === 'tel' && (
+                <div className="flex flex-col gap-1">
+                  <span className="opacity-75 font-semibold text-[11px]">شماره تماس مستقیم:</span>
+                  <input
+                    type="tel"
+                    dir="ltr"
+                    placeholder="09123456789 یا 02188888888"
+                    value={currentPage.fullPageLink.url || ''}
+                    onChange={(e) =>
+                      handleUpdateCurrentPage({
+                        fullPageLink: {
+                          ...currentPage.fullPageLink!,
+                          url: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3 py-1.5 rounded-xl border border-current/20 bg-black/10 dark:bg-white/5 font-mono text-xs focus:outline-none focus:border-orange-500 text-left"
+                  />
+                </div>
+              )}
+
+              {currentPage.fullPageLink.type === 'email' && (
+                <div className="flex flex-col gap-1">
+                  <span className="opacity-75 font-semibold text-[11px]">آدرس ایمیل دریافت‌کننده:</span>
+                  <input
+                    type="email"
+                    dir="ltr"
+                    placeholder="info@yourcompany.com"
+                    value={currentPage.fullPageLink.url || ''}
+                    onChange={(e) =>
+                      handleUpdateCurrentPage({
+                        fullPageLink: {
+                          ...currentPage.fullPageLink!,
+                          url: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-3 py-1.5 rounded-xl border border-current/20 bg-black/10 dark:bg-white/5 font-mono text-xs focus:outline-none focus:border-orange-500 text-left"
+                  />
+                </div>
+              )}
+
+              {/* Tooltip text */}
+              <div className="flex flex-col gap-1">
+                <span className="opacity-75 font-semibold text-[11px]">متن برچسب راهنمای کلیک:</span>
+                <input
+                  type="text"
+                  placeholder="مثال: کلیک کنید تا خرید کنید / کلیک برای اطلاعات بیشتر"
+                  value={currentPage.fullPageLink.tooltip || ''}
+                  onChange={(e) =>
+                    handleUpdateCurrentPage({
+                      fullPageLink: {
+                        ...currentPage.fullPageLink!,
+                        tooltip: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-3 py-1.5 rounded-xl border border-current/20 bg-black/10 dark:bg-white/5 text-xs focus:outline-none focus:border-orange-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Columns Layout */}
         <div className="flex flex-col gap-1.5 text-xs pt-2 border-t border-current/10">
