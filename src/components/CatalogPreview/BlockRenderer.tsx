@@ -13,6 +13,7 @@ import {
   Check,
   Star,
   ExternalLink,
+  Lock,
 } from 'lucide-react';
 
 interface BlockRendererProps {
@@ -714,7 +715,11 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
         isInteractiveMode && hasAction ? 'cursor-pointer hover:brightness-105' : 'cursor-pointer'
       } ${
         isSelected
-          ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-transparent shadow-lg shadow-orange-500/15'
+          ? block.isLocked
+            ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-transparent shadow-lg shadow-amber-500/20'
+            : 'ring-2 ring-orange-500 ring-offset-2 ring-offset-transparent shadow-lg shadow-orange-500/15'
+          : block.isLocked
+          ? 'ring-1 ring-amber-500/40 hover:ring-amber-400'
           : 'hover:ring-1 hover:ring-orange-400/50'
       }`}
       style={{
@@ -729,15 +734,50 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({
     >
       {renderContent()}
 
+      {/* Lock Indicator Badge (Always visible in editor when layer is locked) */}
+      {block.isLocked && !isInteractiveMode && (
+        <div
+          className={`absolute -top-3.5 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-slate-950 font-black text-[9px] shadow-md z-30 select-none transition-all ${
+            isSelected
+              ? 'bg-amber-400 ring-2 ring-white/60 animate-pulse'
+              : 'bg-amber-500/90 hover:bg-amber-400'
+          }`}
+          title="این لایه قفل است و جابجا یا تغییر داده نمی‌شود"
+        >
+          <Lock className="w-2.5 h-2.5" />
+          <span>قفل</span>
+        </div>
+      )}
+
       {/* Visual Selection & Resize Corner Handles */}
       {isSelected && !isInteractiveMode && (
         <>
-          <span className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-orange-500 border-2 border-white shadow-sm pointer-events-none z-30" />
-          <span className="absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full bg-orange-500 border-2 border-white shadow-sm pointer-events-none z-30" />
-          <span className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full bg-orange-500 border-2 border-white shadow-sm pointer-events-none z-30" />
-          <span className="absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full bg-orange-500 border-2 border-white shadow-sm pointer-events-none z-30" />
+          <span
+            className={`absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full border-2 border-white shadow-sm pointer-events-none z-30 ${
+              block.isLocked ? 'bg-amber-500' : 'bg-orange-500'
+            }`}
+          />
+          <span
+            className={`absolute -top-1.5 -left-1.5 w-3 h-3 rounded-full border-2 border-white shadow-sm pointer-events-none z-30 ${
+              block.isLocked ? 'bg-amber-500' : 'bg-orange-500'
+            }`}
+          />
+          <span
+            className={`absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-full border-2 border-white shadow-sm pointer-events-none z-30 ${
+              block.isLocked ? 'bg-amber-500' : 'bg-orange-500'
+            }`}
+          />
+          <span
+            className={`absolute -bottom-1.5 -left-1.5 w-3 h-3 rounded-full border-2 border-white shadow-sm pointer-events-none z-30 ${
+              block.isLocked ? 'bg-amber-500' : 'bg-orange-500'
+            }`}
+          />
           {block.scale && block.scale !== 1 && (
-            <span className="absolute -bottom-5 right-2 px-1.5 py-0.2 rounded bg-orange-600 text-white font-mono text-[9px] font-bold shadow pointer-events-none z-30">
+            <span
+              className={`absolute -bottom-5 right-2 px-1.5 py-0.2 rounded font-mono text-[9px] font-bold shadow pointer-events-none z-30 ${
+                block.isLocked ? 'bg-amber-600 text-slate-950' : 'bg-orange-600 text-white'
+              }`}
+            >
               {Math.round(block.scale * 100)}%
             </span>
           )}

@@ -23,6 +23,7 @@ import {
 interface AnimatedToolDockProps {
   onAddBlock: (type: BlockType) => void;
   onOpenIconModal?: () => void;
+  onOpenCanvaModal?: () => void;
 }
 
 interface ToolItemDef {
@@ -182,6 +183,7 @@ export const ANIMATED_TOOLS: ToolItemDef[] = [
 export const AnimatedToolDock: React.FC<AnimatedToolDockProps> = ({
   onAddBlock,
   onOpenIconModal,
+  onOpenCanvaModal,
 }) => {
   const [clickedTool, setClickedTool] = useState<string | null>(null);
 
@@ -195,7 +197,39 @@ export const AnimatedToolDock: React.FC<AnimatedToolDockProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3">
+      {/* Featured Canva Templates Hub Banner */}
+      {onOpenCanvaModal && (
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            soundEffects.playPop();
+            onOpenCanvaModal();
+          }}
+          className="relative overflow-hidden p-3.5 rounded-2xl bg-gradient-to-r from-[#00c4cc] via-[#7d2ae8] to-[#ff416c] text-white font-extrabold text-xs shadow-lg shadow-indigo-500/25 flex items-center justify-between cursor-pointer group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:rotate-12 transition-transform duration-300">
+              <Sparkles className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
+            </div>
+            <div className="flex flex-col text-right">
+              <span className="text-sm font-black tracking-tight flex items-center gap-1.5">
+                <span>قالب‌های آماده و طراحی‌های ترند Canva</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-white/30 text-[9px] font-mono">NEW</span>
+              </span>
+              <span className="text-[11px] opacity-90 font-medium">
+                جستجوی مستقیم، پیش‌نمایش و درج صفحات آماده کاتالوگ با یک کلیک
+              </span>
+            </div>
+          </div>
+          <span className="px-3.5 py-1.5 rounded-xl bg-white/25 backdrop-blur-md text-[11px] font-bold shadow-sm group-hover:bg-white group-hover:text-purple-700 transition-colors">
+            جستجو و انتخاب
+          </span>
+        </motion.button>
+      )}
+
       {/* Featured Vector SVG Picker Banner Button */}
       {onOpenIconModal && (
         <motion.button
@@ -205,26 +239,25 @@ export const AnimatedToolDock: React.FC<AnimatedToolDockProps> = ({
             soundEffects.playPop();
             onOpenIconModal();
           }}
-          className="relative overflow-hidden p-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-lg shadow-orange-500/30 flex items-center justify-between cursor-pointer group"
+          className="relative overflow-hidden p-3 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-orange-500/20 flex items-center justify-between cursor-pointer group"
         >
           {/* Animated decorative shimmer */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
           <div className="flex items-center gap-3 relative z-10">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:rotate-12 transition-transform duration-300">
-              <Sparkles className="w-5 h-5 animate-pulse" />
+            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner group-hover:rotate-12 transition-transform duration-300">
+              <Sparkles className="w-4 h-4 animate-pulse" />
             </div>
             <div className="flex flex-col text-right">
-              <span className="text-sm font-black tracking-tight flex items-center gap-1.5">
+              <span className="text-xs font-black tracking-tight flex items-center gap-1.5">
                 <span>کتابخانه آیکون‌های وکتور متحرک SVG</span>
-                <span className="w-2 h-2 rounded-full bg-yellow-300 animate-ping" />
               </span>
-              <span className="text-[11px] opacity-90 font-medium">
-                بیش از ۳۰ آیکون شاد و متحرک با افکت‌های نرم و کادرهای متنوع
+              <span className="text-[10px] opacity-90 font-medium">
+                بیش از ۳۰ آیکون شاد و متحرک با افکت‌های نرم
               </span>
             </div>
           </div>
-          <span className="px-3.5 py-1.5 rounded-xl bg-white/25 backdrop-blur-md text-[11px] font-bold shadow-sm group-hover:bg-white group-hover:text-orange-600 transition-colors">
-            انتخاب آیکون
+          <span className="px-3 py-1 rounded-xl bg-white/25 backdrop-blur-md text-[10px] font-bold shadow-sm group-hover:bg-white group-hover:text-orange-600 transition-colors">
+            آیکون‌ها
           </span>
         </motion.button>
       )}

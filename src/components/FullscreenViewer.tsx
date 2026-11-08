@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CatalogState } from '../types/catalog';
 import { CATALOG_SIZES, FONT_CONFIG, FONT_WEIGHTS } from '../constants/presets';
 import { CatalogPageRenderer } from './CatalogPreview/CatalogPageRenderer';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import {
   ChevronRight,
   ChevronLeft,
@@ -15,6 +15,47 @@ interface FullscreenViewerProps {
   initialPage: number;
   onClose: () => void;
 }
+
+// Staggered Container for TOC navigation items
+const tocListVariants: Variants = {
+  closed: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.03,
+      staggerDirection: -1,
+    },
+  },
+  open: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.08,
+      staggerChildren: 0.045,
+    },
+  },
+};
+
+// Item Animation combining Fade-In, Slide-In (from right), and Scale-Up
+const tocItemVariants: Variants = {
+  closed: {
+    opacity: 0,
+    x: 30,
+    scale: 0.9,
+    transition: {
+      duration: 0.18,
+      ease: [0.32, 0, 0.67, 0] as const,
+    },
+  },
+  open: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      damping: 24,
+      stiffness: 280,
+    },
+  },
+};
 
 export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
   state,
@@ -93,20 +134,24 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Menu className="w-4 h-4" />
             <span className="hidden sm:inline">فهرست صفحات</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onClose}
             className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 text-white transition-colors cursor-pointer"
             title="خروج از حالت تمام صفحه (Esc)"
           >
             <X className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -151,14 +196,19 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
       </div>
 
       {/* Bottom Floating Control Bar */}
-      <div
+      <motion.div
+        initial={{ y: 20, opacity: 0, scale: 0.95 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         className="flex items-center gap-3 px-6 py-2.5 rounded-full shadow-2xl border border-white/10 z-30 mb-2 backdrop-blur-md"
         style={{
           backgroundColor: c.bg,
           color: c.fg,
         }}
       >
-        <button
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.92 }}
           onClick={handlePrev}
           disabled={cur <= 0}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 hover:opacity-100"
@@ -167,11 +217,13 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
           }}
         >
           <ChevronRight className="w-5 h-5" />
-        </button>
+        </motion.button>
         <span className="text-xs font-black font-mono px-3">
           {cur + 1} / {total}
         </span>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.92 }}
           onClick={handleNext}
           disabled={cur >= total - 1}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-30 hover:opacity-100"
@@ -180,50 +232,71 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
           }}
         >
           <ChevronLeft className="w-5 h-5" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
-      {/* Table of Contents Drawer */}
+      {/* Table of Contents Modal with Staggered Fade-in, Slide-in, and Scale-up */}
       <AnimatePresence>
         {isMenuOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
               onClick={() => setIsMenuOpen(false)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-md cursor-pointer"
+              className="absolute inset-0 bg-black/75 backdrop-blur-md cursor-pointer"
             />
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-md p-6 rounded-3xl shadow-2xl z-10 flex flex-col gap-4 text-right max-h-[80vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md p-6 rounded-3xl shadow-2xl z-10 flex flex-col gap-4 text-right max-h-[82vh] overflow-hidden"
               style={{
                 backgroundColor: c.bg,
                 color: c.fg,
               }}
             >
               <div className="flex items-center justify-between pb-3 border-b border-current/15">
-                <h3 className="font-black text-base" style={{ color: c.ac }}>
-                  فهرست صفحات کاتالوگ
-                </h3>
-                <button
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: c.ac }}
+                  />
+                  <h3 className="font-black text-base" style={{ color: c.ac }}>
+                    فهرست صفحات کاتالوگ
+                  </h3>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setIsMenuOpen(false)}
-                  className="p-1.5 rounded-lg opacity-70 hover:opacity-100"
+                  className="p-1.5 rounded-xl opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </motion.button>
               </div>
-              <div className="flex flex-col gap-2">
+
+              {/* Staggered Navigation List */}
+              <motion.div
+                variants={tocListVariants}
+                initial="closed"
+                animate="open"
+                exit="closed"
+                className="flex flex-col gap-2 overflow-y-auto pr-1 -mr-1 max-h-[calc(82vh-100px)] custom-scrollbar"
+              >
                 {state.pg.map((p, idx) => (
-                  <button
+                  <motion.button
                     key={p.id}
+                    variants={tocItemVariants}
+                    whileHover={{ scale: 1.02, x: -3 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => handleJump(idx)}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-all cursor-pointer ${
+                    className={`flex items-center justify-between p-3.5 rounded-2xl transition-colors cursor-pointer border ${
                       idx === cur
-                        ? 'font-bold shadow-sm'
-                        : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                        ? 'font-bold shadow-md border-current/25'
+                        : 'opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 border-transparent'
                     }`}
                     style={{
                       backgroundColor:
@@ -233,13 +306,23 @@ export const FullscreenViewer: React.FC<FullscreenViewerProps> = ({
                       color: idx === cur ? c.ac : 'inherit',
                     }}
                   >
-                    <span>{p.t}</span>
-                    <span className="font-mono text-xs font-bold">
+                    <div className="flex items-center gap-2.5 truncate">
+                      <span
+                        className={`w-6 h-6 rounded-lg text-xs font-mono font-black flex items-center justify-center shrink-0 ${
+                          idx === cur ? 'bg-current text-white' : 'bg-black/10 dark:bg-white/10'
+                        }`}
+                        style={idx === cur ? { backgroundColor: c.ac, color: '#fff' } : {}}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span className="truncate text-sm font-semibold">{p.t}</span>
+                    </div>
+                    <span className="font-mono text-xs opacity-60 shrink-0">
                       صفحه {idx + 1}
                     </span>
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </motion.div>
             </motion.div>
           </div>
         )}

@@ -24,6 +24,8 @@ import {
   AlignHorizontalDistributeCenter,
   AlignVerticalDistributeCenter,
   LayoutGrid,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 
 interface SelectionFloatingToolbarProps {
@@ -36,6 +38,7 @@ interface SelectionFloatingToolbarProps {
   onChangeLayer: (action: 'front' | 'back' | 'forward' | 'backward') => void;
   onAlign?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   onDistribute?: (direction: 'horizontal' | 'vertical') => void;
+  onToggleLock?: (forcedState?: boolean) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
 }
@@ -50,6 +53,7 @@ export const SelectionFloatingToolbar: React.FC<SelectionFloatingToolbarProps> =
   onChangeLayer,
   onAlign,
   onDistribute,
+  onToggleLock,
   onSelectAll,
   onClearSelection,
 }) => {
@@ -58,11 +62,13 @@ export const SelectionFloatingToolbar: React.FC<SelectionFloatingToolbarProps> =
   const count = selectedBlockIds.length;
   if (count === 0) return null;
 
-  // Determine average or primary scale
+  // Determine average or primary scale & lock state
   const selectedBlocks = blocks.filter((b) => selectedBlockIds.includes(b.id));
   const primaryBlock = selectedBlocks[0];
   const currentScale = primaryBlock?.scale ?? 1;
   const scalePercent = Math.round(currentScale * 100);
+  const areAllLocked = selectedBlocks.length > 0 && selectedBlocks.every((b) => b.isLocked);
+  const areAnyLocked = selectedBlocks.some((b) => b.isLocked);
 
   const SCALE_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -76,12 +82,62 @@ export const SelectionFloatingToolbar: React.FC<SelectionFloatingToolbarProps> =
         className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 flex flex-wrap items-center gap-1.5 p-2 rounded-2xl bg-slate-900/95 border border-orange-500/40 text-slate-100 shadow-2xl backdrop-blur-xl ring-1 ring-white/10 select-none text-xs max-w-[95vw]"
       >
         {/* Count Badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-500/20 text-orange-400 font-extrabold text-[11px] border border-orange-500/30">
-          <Sparkles className="w-3.5 h-3.5 flex-none" />
+        <div
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-extrabold text-[11px] border ${
+            areAllLocked
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+              : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+          }`}
+        >
+          {areAllLocked ? (
+            <Lock className="w-3.5 h-3.5 flex-none text-amber-400" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5 flex-none" />
+          )}
           <span>
-            {count === 1 ? '۱ عنصر انتخاب شده' : `${count} عنصر انتخابی (دسته‌جمعی)`}
+            {count === 1
+              ? areAllLocked
+                ? '۱ عنصر (قفل شده)'
+                : '۱ عنصر انتخاب شده'
+              : areAllLocked
+              ? `${count} عنصر (همگی قفل شده)`
+              : `${count} عنصر انتخابی (دسته‌جمعی)`}
           </span>
         </div>
+
+        {/* Lock / Unlock Toggle Button */}
+        {onToggleLock && (
+          <button
+            onClick={() => {
+              soundEffects.playPop();
+              onToggleLock(!areAllLocked);
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-black text-[11px] transition-all cursor-pointer border shadow-sm ${
+              areAllLocked
+                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/30'
+                : areAnyLocked
+                ? 'bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border-amber-500/40'
+                : 'bg-white/10 hover:bg-white/20 text-slate-200 border-white/15'
+            }`}
+            title={
+              areAllLocked
+                ? 'عناصر انتخاب شده قفل هستند. کلیک برای باز کردن قفل'
+                : 'قفل کردن این عناصر برای جلوگیری از جابجایی یا حذف تصادفی'
+            }
+          >
+            {areAllLocked ? (
+              <>
+                <Unlock className="w-3.5 h-3.5 text-slate-950" />
+                <span>باز کردن قفل</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>قفل کردن لایه</span>
+              </>
+            )}
+          </button>
+        )}
 
         {/* Divider */}
         <div className="h-4 w-px bg-white/20 mx-0.5 hidden sm:block" />
@@ -425,17 +481,29 @@ export const SelectionFloatingToolbar: React.FC<SelectionFloatingToolbarProps> =
 
         {/* DELETE BUTTON (Single or Batch) */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: areAllLocked ? 1 : 1.05 }}
+          whileTap={{ scale: areAllLocked ? 1 : 0.95 }}
           onClick={() => {
+            if (areAllLocked) return;
             soundEffects.playPop();
             onDelete();
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-xs shadow-md shadow-red-500/30 transition-all cursor-pointer"
-          title={count > 1 ? `حذف دسته‌جمعی (${count} مورد)` : 'حذف این عنصر'}
+          disabled={areAllLocked}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-xs shadow-md transition-all ${
+            areAllLocked
+              ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+              : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-red-500/30 cursor-pointer'
+          }`}
+          title={
+            areAllLocked
+              ? 'این عنصر قفل است و نمی‌توان آن را حذف کرد (ابتدا قفل را باز کنید)'
+              : count > 1
+              ? `حذف دسته‌جمعی (${count} مورد)`
+              : 'حذف این عنصر'
+          }
         >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>{count > 1 ? `حذف دسته‌جمعی (${count})` : 'حذف'}</span>
+          {areAllLocked ? <Lock className="w-3.5 h-3.5 text-amber-400" /> : <Trash2 className="w-3.5 h-3.5" />}
+          <span>{areAllLocked ? 'قفل شده' : count > 1 ? `حذف دسته‌جمعی (${count})` : 'حذف'}</span>
         </motion.button>
 
         {/* Clear Selection X */}

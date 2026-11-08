@@ -36,6 +36,9 @@ import { IconPickerModal } from './components/IconPickerModal';
 import { UploadCatalogModal } from './components/UploadCatalogModal';
 import { ArchiveModal } from './components/ArchiveModal';
 import { CodeExportModal } from './components/CodeExportModal';
+import { CanvaTemplateModal } from './components/CanvaTemplateModal';
+import { CanvaTemplateItem, CANVA_CATALOG_TEMPLATES } from './constants/canvaTemplates';
+import { CatalogThemePalette } from './types/catalog';
 import { generateStandaloneCatalogHtml } from './utils/htmlExporter';
 import { soundEffects } from './utils/soundEffects';
 import { motion, AnimatePresence } from 'motion/react';
@@ -127,6 +130,9 @@ export default function App() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showCodeModal, setShowCodeModal] = useState(false);
+  const [showCanvaModal, setShowCanvaModal] = useState(false);
+  const [canvaModalInitialSearch, setCanvaModalInitialSearch] = useState('');
+  const [pinnedCanvaTemplate, setPinnedCanvaTemplate] = useState<CanvaTemplateItem | null>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -286,12 +292,24 @@ export default function App() {
 
   // Batch / Single Delete
   const handleBatchDelete = useCallback(() => {
-    const idsToDelete =
+    const targetIds =
       selectedBlockIds.length > 0
         ? selectedBlockIds
         : selectedBlockId
         ? [selectedBlockId]
         : [];
+    if (targetIds.length === 0) return;
+
+    const curP = state.pg[currentPageIndex];
+    const lockedBlocks = curP ? curP.bl.filter((b) => targetIds.includes(b.id) && b.isLocked) : [];
+
+    if (lockedBlocks.length > 0 && lockedBlocks.length === targetIds.length) {
+      soundEffects.playPop();
+      showToast('⚠️ این المان قفل است و نمی‌توان آن را حذف کرد. ابتدا قفل آن را باز کنید.');
+      return;
+    }
+
+    const idsToDelete = targetIds.filter((id) => !lockedBlocks.some((l) => l.id === id));
     if (idsToDelete.length === 0) return;
 
     soundEffects.playPop();
@@ -309,10 +327,16 @@ export default function App() {
       return { ...prev, pg: nextPages };
     }, desc);
 
-    setSelectedBlockIds([]);
-    setSelectedBlockId(undefined);
-    showToast(count > 1 ? `${count} عنصر با موفقیت حذف شدند.` : 'عنصر حذف شد.');
-  }, [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]);
+    if (lockedBlocks.length > 0) {
+      setSelectedBlockIds(lockedBlocks.map((b) => b.id));
+      setSelectedBlockId(lockedBlocks[0].id);
+      showToast(`${count} عنصر حذف شد (${lockedBlocks.length} عنصر قفل‌شده حفظ شد).`);
+    } else {
+      setSelectedBlockIds([]);
+      setSelectedBlockId(undefined);
+      showToast(count > 1 ? `${count} عنصر با موفقیت حذف شدند.` : 'عنصر حذف شد.');
+    }
+  }, [selectedBlockIds, selectedBlockId, currentPageIndex, state.pg, updateStateWithHistory]);
 
   // Batch / Single Resize Delta (+0.1 or -0.1)
   const handleBatchResizeDelta = useCallback(
@@ -324,6 +348,14 @@ export default function App() {
           ? [selectedBlockId]
           : [];
       if (targetIds.length === 0) return;
+
+      const curP = state.pg[currentPageIndex];
+      const lockedCount = curP ? curP.bl.filter((b) => targetIds.includes(b.id) && b.isLocked).length : 0;
+      if (lockedCount === targetIds.length) {
+        soundEffects.playPop();
+        showToast('⚠️ این المان قفل است و تغییر سایز داده نمی‌شود.');
+        return;
+      }
 
       const desc =
         targetIds.length > 1
@@ -337,7 +369,7 @@ export default function App() {
         nextPages[currentPageIndex] = {
           ...curPage,
           bl: curPage.bl.map((b) => {
-            if (targetIds.includes(b.id)) {
+            if (targetIds.includes(b.id) && !b.isLocked) {
               const curScale = b.scale ?? 1;
               const newScale = Math.max(
                 0.4,
@@ -351,7 +383,7 @@ export default function App() {
         return { ...prev, pg: nextPages };
       }, desc);
     },
-    [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]
+    [selectedBlockIds, selectedBlockId, currentPageIndex, state.pg, updateStateWithHistory]
   );
 
   // Batch / Single Set Absolute Scale
@@ -364,6 +396,14 @@ export default function App() {
           ? [selectedBlockId]
           : [];
       if (targetIds.length === 0) return;
+
+      const curP = state.pg[currentPageIndex];
+      const lockedCount = curP ? curP.bl.filter((b) => targetIds.includes(b.id) && b.isLocked).length : 0;
+      if (lockedCount === targetIds.length) {
+        soundEffects.playPop();
+        showToast('⚠️ این المان قفل است و تغییر مقیاس داده نمی‌شود.');
+        return;
+      }
 
       const clamped = Math.max(0.4, Math.min(2.5, scaleVal));
       const desc =
@@ -378,7 +418,7 @@ export default function App() {
         nextPages[currentPageIndex] = {
           ...curPage,
           bl: curPage.bl.map((b) => {
-            if (targetIds.includes(b.id)) {
+            if (targetIds.includes(b.id) && !b.isLocked) {
               return { ...b, scale: clamped };
             }
             return b;
@@ -387,7 +427,7 @@ export default function App() {
         return { ...prev, pg: nextPages };
       }, desc);
     },
-    [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]
+    [selectedBlockIds, selectedBlockId, currentPageIndex, state.pg, updateStateWithHistory]
   );
 
   // Batch / Single Duplicate
@@ -493,6 +533,7 @@ export default function App() {
   );
 
   // Batch / Single Width Set (25%, 50%, 75%, 100%)
+  // Batch / Single Width Set (25%, 50%, 75%, 100%)
   const handleBatchSetWidth = useCallback(
     (widthPercent: number) => {
       const targetIds =
@@ -503,6 +544,14 @@ export default function App() {
           : [];
       if (targetIds.length === 0) return;
 
+      const curP = state.pg[currentPageIndex];
+      const lockedCount = curP ? curP.bl.filter((b) => targetIds.includes(b.id) && b.isLocked).length : 0;
+      if (lockedCount === targetIds.length) {
+        soundEffects.playPop();
+        showToast('⚠️ این المان قفل است و عرض آن تغییر نمی‌کند.');
+        return;
+      }
+
       updateStateWithHistory((prev) => {
         const nextPages = [...prev.pg];
         const curPage = nextPages[currentPageIndex];
@@ -510,7 +559,7 @@ export default function App() {
         nextPages[currentPageIndex] = {
           ...curPage,
           bl: curPage.bl.map((b) => {
-            if (targetIds.includes(b.id)) {
+            if (targetIds.includes(b.id) && !b.isLocked) {
               return { ...b, posW: widthPercent };
             }
             return b;
@@ -520,7 +569,56 @@ export default function App() {
       }, `تنظیم عرض عناصر به ${widthPercent}%`);
       showToast(`عرض عناصر به ${widthPercent}% تغییر یافت.`);
     },
-    [selectedBlockIds, selectedBlockId, currentPageIndex, updateStateWithHistory]
+    [selectedBlockIds, selectedBlockId, currentPageIndex, state.pg, updateStateWithHistory]
+  );
+
+  // Batch / Single Lock Toggle (Lock/Unlock selected layers)
+  const handleBatchToggleLock = useCallback(
+    (forcedState?: boolean) => {
+      const targetIds =
+        selectedBlockIds.length > 0
+          ? selectedBlockIds
+          : selectedBlockId
+          ? [selectedBlockId]
+          : [];
+      if (targetIds.length === 0) return;
+
+      soundEffects.playPop();
+
+      const curP = state.pg[currentPageIndex];
+      if (!curP) return;
+
+      const targetBlocks = curP.bl.filter((b) => targetIds.includes(b.id));
+      const areAllLocked = targetBlocks.length > 0 && targetBlocks.every((b) => b.isLocked);
+      const willLock = forcedState !== undefined ? forcedState : !areAllLocked;
+
+      const desc = willLock
+        ? `قفل کردن ${targetIds.length} عنصر`
+        : `باز کردن قفل ${targetIds.length} عنصر`;
+
+      updateStateWithHistory((prev) => {
+        const nextPages = [...prev.pg];
+        const curPage = nextPages[currentPageIndex];
+        if (!curPage) return prev;
+        nextPages[currentPageIndex] = {
+          ...curPage,
+          bl: curPage.bl.map((b) => {
+            if (targetIds.includes(b.id)) {
+              return { ...b, isLocked: willLock };
+            }
+            return b;
+          }),
+        };
+        return { ...prev, pg: nextPages };
+      }, desc);
+
+      showToast(
+        willLock
+          ? `🔒 ${targetIds.length === 1 ? 'عنصر قفل شد' : `${targetIds.length} عنصر قفل شدند`} (از جابجایی یا حذف تصادفی محافظت شد).`
+          : `🔓 قفل ${targetIds.length === 1 ? 'عنصر' : `${targetIds.length} عنصر`} باز شد.`
+      );
+    },
+    [selectedBlockIds, selectedBlockId, currentPageIndex, state.pg, updateStateWithHistory]
   );
 
   // Batch / Single Alignment (Align Left, Center, Right, Top, Middle, Bottom)
@@ -969,6 +1067,12 @@ export default function App() {
   };
 
   const handleUpdateBlockPosition = (blockId: string, posX: number, posY: number) => {
+    const curP = state.pg[currentPageIndex];
+    const b = curP?.bl.find((block) => block.id === blockId);
+    if (b?.isLocked) {
+      showToast('⚠️ این المان قفل شده است و قابل جابجایی نیست.');
+      return;
+    }
     updateStateWithHistory((prev) => {
       const nextPages = [...prev.pg];
       const curBl = nextPages[currentPageIndex].bl.map((b) =>
@@ -1118,6 +1222,123 @@ export default function App() {
     showToast('آیکون وکتور با موفقیت به صفحه افزوده شد.');
   };
 
+  const handleOpenCanvaModal = useCallback((searchQuery = '') => {
+    soundEffects.playPop();
+    setCanvaModalInitialSearch(searchQuery);
+    setShowCanvaModal(true);
+  }, []);
+
+  const handleApplyCanvaTemplate = useCallback(
+    (templatePage: CatalogPage, mode: 'new' | 'replace') => {
+      soundEffects.playAdd();
+      updateStateWithHistory((prev) => {
+        if (mode === 'replace') {
+          const nextPages = [...prev.pg];
+          nextPages[currentPageIndex] = {
+            ...templatePage,
+            id: 'p_canva_' + Math.random().toString(36).substring(2, 9),
+          };
+          return { ...prev, pg: nextPages };
+        } else {
+          const newIdx = prev.pg.length;
+          const nextPages = [
+            ...prev.pg,
+            {
+              ...templatePage,
+              id: 'p_canva_' + Math.random().toString(36).substring(2, 9),
+            },
+          ];
+          setTimeout(() => {
+            setCurrentPageIndex(newIdx);
+            setActiveTab('content');
+          }, 50);
+          return { ...prev, pg: nextPages };
+        }
+      }, `اعمال قالب Canva: ${templatePage.t}`);
+
+      showToast(
+        mode === 'replace'
+          ? `قالب Canva در صفحه ${currentPageIndex + 1} جایگزین شد.`
+          : `قالب Canva به عنوان صفحه جدید افزوده شد.`
+      );
+    },
+    [currentPageIndex, updateStateWithHistory]
+  );
+
+  const handleApplyCanvaPalette = useCallback(
+    (palette: CatalogThemePalette) => {
+      soundEffects.playChime();
+      updateStateWithHistory(
+        (prev) => ({
+          ...prev,
+          c: palette,
+        }),
+        `اعمال پالت رنگی Canva: ${palette.name}`
+      );
+      showToast(`پالت رنگی «${palette.name}» روی کاتالوگ اعمال شد.`);
+    },
+    [updateStateWithHistory]
+  );
+
+  const handleInsertCanvaToc = useCallback(
+    (style: 'journal' | 'cards' | 'minimal') => {
+      soundEffects.playAdd();
+      const tocTemplate = CANVA_CATALOG_TEMPLATES.find((t) => t.id === 'canva_editorial_toc');
+      const pageToInsert: CatalogPage = tocTemplate
+        ? {
+            ...tocTemplate.pageTemplate,
+            id: 'p_toc_' + Math.random().toString(36).substring(2, 9),
+            bl: tocTemplate.pageTemplate.bl.map((b) => ({
+              ...b,
+              id: 'b_toc_' + Math.random().toString(36).substring(2, 9),
+            })),
+          }
+        : {
+            id: 'p_toc_' + Math.random().toString(36).substring(2, 9),
+            t: 'فهرست بخش‌های کاتالوگ',
+            toc: false,
+            layoutMode: 'flow',
+            bl: [
+              {
+                id: 'b_' + Math.random().toString(36).substring(2, 9),
+                t: 'h',
+                x: 'فهرست هوشمند فصول',
+                sz: 30,
+                al: 'right',
+                hs: 'b',
+              },
+              {
+                id: 'b_' + Math.random().toString(36).substring(2, 9),
+                t: 'hr',
+                st: 'gradient',
+              },
+              {
+                id: 'b_' + Math.random().toString(36).substring(2, 9),
+                t: 'toc',
+                title: 'فهرست اختصاصی کاتالوگ',
+              },
+            ],
+          };
+
+      updateStateWithHistory((prev) => {
+        const nextPages = [...prev.pg];
+        const targetIdx = Math.min(1, nextPages.length);
+        nextPages.splice(targetIdx, 0, pageToInsert);
+        return { ...prev, pg: nextPages };
+      }, 'افزودن برگه فهرست هوشمند Canva');
+
+      setCurrentPageIndex(Math.min(1, state.pg.length));
+      showToast('برگه فهرست ژورنالی به کاتالوگ اضافه گردید.');
+    },
+    [state.pg.length, updateStateWithHistory]
+  );
+
+  const handlePinCanvaInspiration = useCallback((template: CanvaTemplateItem) => {
+    soundEffects.playPop();
+    setPinnedCanvaTemplate(template);
+    showToast(`قالب «${template.title}» برای الهام پین شد.`);
+  }, []);
+
   const handleDownloadHtml = () => {
     const html = generateStandaloneCatalogHtml(state);
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -1199,6 +1420,7 @@ export default function App() {
         onOpenFullscreen={() => setShowFullscreen(true)}
         onOpenIconModal={() => setShowIconModal(true)}
         onOpenThemeModal={() => setShowUiThemeModal(true)}
+        onOpenCanvaModal={() => handleOpenCanvaModal()}
         onPrint={handlePrint}
         onDownloadHtml={handleDownloadHtml}
       />
@@ -1222,6 +1444,7 @@ export default function App() {
           onOpenFullscreen={() => setShowFullscreen(true)}
           onOpenArchiveModal={() => setShowArchiveModal(true)}
           onOpenCodeModal={() => setShowCodeModal(true)}
+          onOpenCanvaModal={() => handleOpenCanvaModal()}
           onNewCatalog={handleNewBlankCatalog}
           onDownloadHtml={handleDownloadHtml}
           onSaveToMemory={handleSaveToMemory}
@@ -1323,6 +1546,11 @@ export default function App() {
                 onSelectBlock={handleSelectBlock}
                 onUpdateState={(updater) => updateStateWithHistory(updater, 'ویرایش محتوا')}
                 onOpenIconModal={() => setShowIconModal(true)}
+                onOpenCanvaModal={handleOpenCanvaModal}
+                onApplyCanvaTemplate={handleApplyCanvaTemplate}
+                onApplyCanvaPalette={handleApplyCanvaPalette}
+                pinnedCanvaTemplate={pinnedCanvaTemplate}
+                onClearPinnedInspiration={() => setPinnedCanvaTemplate(null)}
                 onPageChange={setCurrentPageIndex}
                 onSelectAllBlocks={handleSelectAllBlocks}
                 onClearSelection={handleClearSelection}
@@ -1333,6 +1561,7 @@ export default function App() {
                 onBatchSetWidth={handleBatchSetWidth}
                 onBatchAlign={handleBatchAlign}
                 onBatchDistribute={handleBatchDistribute}
+                onBatchToggleLock={handleBatchToggleLock}
               />
             )}
             {activeTab === 'icons' && (
@@ -1348,6 +1577,8 @@ export default function App() {
                 state={state}
                 onUpdateState={(updater) => updateStateWithHistory(updater, 'تنظیمات ناوبری')}
                 onAddTocPage={handleAddTocPage}
+                onOpenCanvaModal={() => handleOpenCanvaModal('فهرست')}
+                onInsertCanvaToc={handleInsertCanvaToc}
               />
             )}
             {activeTab === 'export' && (
@@ -1392,6 +1623,7 @@ export default function App() {
             onBatchChangeLayer={handleBatchChangeLayer}
             onBatchAlign={handleBatchAlign}
             onBatchDistribute={handleBatchDistribute}
+            onBatchToggleLock={handleBatchToggleLock}
             onSelectAllBlocks={handleSelectAllBlocks}
             onClearSelection={handleClearSelection}
           />
@@ -1532,6 +1764,17 @@ export default function App() {
         isOpen={showCodeModal}
         onClose={() => setShowCodeModal(false)}
         state={state}
+      />
+
+      {/* Canva Inspired Templates Hub Modal */}
+      <CanvaTemplateModal
+        isOpen={showCanvaModal}
+        onClose={() => setShowCanvaModal(false)}
+        onApplyTemplate={handleApplyCanvaTemplate}
+        onApplyPalette={handleApplyCanvaPalette}
+        onPinInspiration={handlePinCanvaInspiration}
+        pinnedTemplateId={pinnedCanvaTemplate?.id}
+        initialSearch={canvaModalInitialSearch}
       />
     </div>
   );

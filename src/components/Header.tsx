@@ -42,6 +42,7 @@ interface HeaderProps {
   onOpenFullscreen: () => void;
   onOpenArchiveModal: () => void;
   onOpenCodeModal: () => void;
+  onOpenCanvaModal?: () => void;
   onNewCatalog: () => void;
   onDownloadHtml: () => void;
   onUpdateTitle: (title: string) => void;
@@ -66,6 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenFullscreen,
   onOpenArchiveModal,
   onOpenCodeModal,
+  onOpenCanvaModal,
   onNewCatalog,
   onDownloadHtml,
   onUpdateTitle,
@@ -311,6 +313,23 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Canva Templates Hub Button */}
+              {onOpenCanvaModal && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    soundEffects.playPop();
+                    onOpenCanvaModal();
+                  }}
+                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-[#00c4cc]/20 via-[#7d2ae8]/20 to-[#ff416c]/20 hover:from-[#00c4cc]/30 hover:to-[#7d2ae8]/30 border border-indigo-500/40 text-cyan-300 hover:text-white text-xs font-black transition-all cursor-pointer shadow-sm flex-none"
+                  title="مخزن و قالب‌های طراحی آماده Canva"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                  <span>قالب‌های Canva</span>
+                </motion.button>
+              )}
 
               {/* New Blank Catalog Button */}
               <motion.button

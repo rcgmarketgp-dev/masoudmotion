@@ -63,6 +63,11 @@ class SoundFeedback {
     } catch (e) {}
   }
 
+  // Crisp micro-click
+  public playClick() {
+    this.playPop();
+  }
+
   // Joyful bubble / click for tool addition
   public playAdd() {
     if (!this.enabled) return;

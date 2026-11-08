@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { CatalogState, EditorUiTheme, ProjectSnapshot } from '../types/catalog';
 import { soundEffects } from '../utils/soundEffects';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import {
   Menu,
   X,
@@ -47,9 +47,49 @@ interface HamburgerMenuProps {
   onOpenFullscreen: () => void;
   onOpenIconModal: () => void;
   onOpenThemeModal: () => void;
+  onOpenCanvaModal?: () => void;
   onPrint: () => void;
   onDownloadHtml: () => void;
 }
+
+// Staggered Container for Nav Items
+const navListVariants: Variants = {
+  closed: {
+    transition: {
+      staggerChildren: 0.03,
+      staggerDirection: -1,
+    },
+  },
+  open: {
+    transition: {
+      delayChildren: 0.08,
+      staggerChildren: 0.05,
+    },
+  },
+};
+
+// Item Animation combining Fade-In, Slide-In (from right), and Scale-Up
+const navItemVariants: Variants = {
+  closed: {
+    opacity: 0,
+    x: 35,
+    scale: 0.92,
+    transition: {
+      duration: 0.18,
+      ease: [0.32, 0, 0.67, 0] as const,
+    },
+  },
+  open: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      damping: 24,
+      stiffness: 280,
+    },
+  },
+};
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   state,
@@ -69,6 +109,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onOpenFullscreen,
   onOpenIconModal,
   onOpenThemeModal,
+  onOpenCanvaModal,
   onPrint,
   onDownloadHtml,
 }) => {
@@ -181,20 +222,28 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               className="fixed inset-0 bg-black/70 backdrop-blur-md cursor-pointer"
             />
 
-            {/* Slide-out Menu Panel from Right */}
+            {/* Slide-out Menu Panel from Right with Fade-In, Slide-In and Scale-Up */}
             <motion.aside
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              initial={{ x: '100%', opacity: 0.6, scale: 0.98 }}
+              animate={{ x: 0, opacity: 1, scale: 1 }}
+              exit={{ x: '100%', opacity: 0.6, scale: 0.98 }}
+              transition={{ type: 'spring', damping: 27, stiffness: 270 }}
               className="fixed top-0 right-0 h-full w-full sm:w-[420px] max-w-full bg-slate-900/98 border-l border-slate-700/80 shadow-2xl backdrop-blur-2xl flex flex-col z-10 text-slate-100 overflow-hidden"
             >
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-950/60 flex-none">
+              {/* Drawer Header with Entrance Animation */}
+              <motion.div
+                initial={{ opacity: 0, y: -15, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.25, delay: 0.05 }}
+                className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-950/60 flex-none"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-rose-500 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-orange-500/30 ring-2 ring-white/20 select-none">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 6 }}
+                    className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-500 to-rose-500 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-orange-500/30 ring-2 ring-white/20 select-none cursor-default"
+                  >
                     RCG
-                  </div>
+                  </motion.div>
                   <div>
                     <h2 className="font-black text-sm sm:text-base text-white flex items-center gap-2">
                       <span>منوی کاتالوگ‌ساز هوشمند</span>
@@ -216,12 +265,21 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                 >
                   <X className="w-4 h-4" />
                 </motion.button>
-              </div>
+              </motion.div>
 
-              {/* Scrollable Menu Content */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 no-scrollbar">
-                {/* 1. Memory Storage & Resume Card (Key Feature) */}
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-850 border border-orange-500/30 shadow-lg relative overflow-hidden">
+              {/* Scrollable Menu Content with Staggered Items Animation */}
+              <motion.div
+                variants={navListVariants}
+                initial="closed"
+                animate="open"
+                exit="closed"
+                className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 no-scrollbar"
+              >
+                {/* 1. Memory Storage & Resume Card (Key Feature) - Animated Item */}
+                <motion.div
+                  variants={navItemVariants}
+                  className="p-4 rounded-2xl bg-gradient-to-br from-slate-800/90 to-slate-850 border border-orange-500/30 shadow-lg relative overflow-hidden"
+                >
                   <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400" />
 
                   <div className="flex items-center justify-between mb-3">
@@ -387,23 +445,30 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
 
-                {/* 2. Catalog Core Operations */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] font-black text-slate-400 px-1">
-                    عملیات پروژه کاتالوگ
-                  </span>
+                {/* 2. Catalog Core Operations with Slide-in & Scale-up */}
+                <motion.div variants={navItemVariants} className="space-y-1.5">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[11px] font-black text-slate-400">
+                      عملیات پروژه کاتالوگ
+                    </span>
+                    <span className="text-[9px] text-orange-400/80 font-bold">
+                      ۵ ابزار آماده
+                    </span>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     {/* New Blank Catalog */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         soundEffects.playAdd();
                         onNewCatalog();
                         setIsOpen(false);
                       }}
-                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-amber-500/15 border border-slate-700/70 hover:border-amber-500/40 text-right transition-all group cursor-pointer"
+                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-amber-500/15 border border-slate-700/70 hover:border-amber-500/40 text-right transition-all group cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <FilePlus className="w-4 h-4" />
@@ -414,16 +479,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       <div className="text-[10px] text-slate-400">
                         ریست و ساخت صفحه خام
                       </div>
-                    </button>
+                    </motion.button>
 
                     {/* Archives Modal */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenArchiveModal();
                         setIsOpen(false);
                       }}
-                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-purple-500/15 border border-slate-700/70 hover:border-purple-500/40 text-right transition-all group cursor-pointer"
+                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-purple-500/15 border border-slate-700/70 hover:border-purple-500/40 text-right transition-all group cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <FolderArchive className="w-4 h-4" />
@@ -434,16 +501,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       <div className="text-[10px] text-slate-400">
                         مدیریت کاتالوگ‌های قبلی
                       </div>
-                    </button>
+                    </motion.button>
 
                     {/* Upload Catalog PDF / Images */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenUploadModal();
                         setIsOpen(false);
                       }}
-                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-emerald-500/15 border border-slate-700/70 hover:border-emerald-500/40 text-right transition-all group cursor-pointer"
+                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-emerald-500/15 border border-slate-700/70 hover:border-emerald-500/40 text-right transition-all group cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <UploadCloud className="w-4 h-4" />
@@ -454,16 +523,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       <div className="text-[10px] text-slate-400">
                         وارد کردن فایل‌های آماده
                       </div>
-                    </button>
+                    </motion.button>
 
                     {/* Vector Animated Icons Library */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenIconModal();
                         setIsOpen(false);
                       }}
-                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-fuchsia-500/15 border border-slate-700/70 hover:border-fuchsia-500/40 text-right transition-all group cursor-pointer"
+                      className="p-3 rounded-2xl bg-slate-800/70 hover:bg-fuchsia-500/15 border border-slate-700/70 hover:border-fuchsia-500/40 text-right transition-all group cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="w-8 h-8 rounded-xl bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <Sparkles className="w-4 h-4" />
@@ -474,24 +545,58 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       <div className="text-[10px] text-slate-400">
                         کتابخانه وکتورهای SVG
                       </div>
-                    </button>
-                  </div>
-                </div>
+                    </motion.button>
 
-                {/* 3. Export & Download Actions */}
-                <div className="space-y-1.5">
+                    {/* Canva Templates & Inspirations */}
+                    {onOpenCanvaModal && (
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          soundEffects.playPop();
+                          onOpenCanvaModal();
+                          setIsOpen(false);
+                        }}
+                        className="p-3 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/40 to-slate-800/70 hover:from-indigo-900/50 hover:to-purple-900/50 border border-indigo-500/30 hover:border-indigo-400/60 text-right transition-all group cursor-pointer col-span-2 flex items-center justify-between shadow-sm hover:shadow-md"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00c4cc] to-[#7d2ae8] text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                            <Sparkles className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-white group-hover:text-cyan-300 flex items-center gap-1.5">
+                              <span>مخزن قالب‌های طراحی Canva</span>
+                              <span className="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 text-[9px] font-mono">
+                                CANVA
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              جستجو، پیش‌نمایش و اعمال مستقیم صفحات آماده
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" />
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* 3. Export & Download Actions with Slide-in & Scale-up */}
+                <motion.div variants={navItemVariants} className="space-y-1.5">
                   <span className="text-[11px] font-black text-slate-400 px-1">
                     خروجی و اشتراک‌گذاری
                   </span>
 
                   <div className="space-y-2">
                     {/* Standalone HTML Download */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02, x: -3 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => {
                         soundEffects.playChime();
                         onDownloadHtml();
                       }}
-                      className="w-full p-3 rounded-2xl bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-rose-500/15 hover:from-orange-500/25 hover:to-amber-500/25 border border-orange-500/40 flex items-center justify-between text-right transition-all cursor-pointer"
+                      className="w-full p-3 rounded-2xl bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-rose-500/15 hover:from-orange-500/25 hover:to-amber-500/25 border border-orange-500/40 flex items-center justify-between text-right transition-all cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-md shadow-orange-500/30">
@@ -507,16 +612,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                       </div>
                       <ChevronLeft className="w-4 h-4 text-orange-400" />
-                    </button>
+                    </motion.button>
 
                     {/* View Source Code & Embed iFrame */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02, x: -3 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenCodeModal();
                         setIsOpen(false);
                       }}
-                      className="w-full p-2.5 rounded-2xl bg-slate-800/70 hover:bg-cyan-500/15 border border-slate-700/70 hover:border-cyan-500/40 flex items-center justify-between text-right transition-all cursor-pointer"
+                      className="w-full p-2.5 rounded-2xl bg-slate-800/70 hover:bg-cyan-500/15 border border-slate-700/70 hover:border-cyan-500/40 flex items-center justify-between text-right transition-all cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
@@ -532,16 +639,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                       </div>
                       <ChevronLeft className="w-4 h-4 text-slate-400" />
-                    </button>
+                    </motion.button>
 
                     {/* Print / Export to PDF */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02, x: -3 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onPrint();
                         setIsOpen(false);
                       }}
-                      className="w-full p-2.5 rounded-2xl bg-slate-800/70 hover:bg-slate-750 border border-slate-700/70 flex items-center justify-between text-right transition-all cursor-pointer"
+                      className="w-full p-2.5 rounded-2xl bg-slate-800/70 hover:bg-slate-750 border border-slate-700/70 flex items-center justify-between text-right transition-all cursor-pointer shadow-sm"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-slate-700 text-slate-300 flex items-center justify-center">
@@ -557,25 +666,27 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                         </div>
                       </div>
                       <ChevronLeft className="w-4 h-4 text-slate-400" />
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* 4. Preview Modes & Studio Theme */}
-                <div className="space-y-1.5">
+                {/* 4. Preview Modes & Studio Theme with Slide-in & Scale-up */}
+                <motion.div variants={navItemVariants} className="space-y-1.5">
                   <span className="text-[11px] font-black text-slate-400 px-1">
                     نمایش و ظاهر استودیو
                   </span>
 
                   <div className="grid grid-cols-2 gap-2">
                     {/* Dual Device Preview */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenDualPreview();
                         setIsOpen(false);
                       }}
-                      className="p-2.5 rounded-2xl bg-slate-800/70 hover:bg-blue-500/15 border border-slate-700/70 hover:border-blue-500/40 text-right transition-all cursor-pointer flex items-center gap-2.5"
+                      className="p-2.5 rounded-2xl bg-slate-800/70 hover:bg-blue-500/15 border border-slate-700/70 hover:border-blue-500/40 text-right transition-all cursor-pointer flex items-center gap-2.5 shadow-sm hover:shadow-md"
                     >
                       <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-none">
                         <Smartphone className="w-3.5 h-3.5" />
@@ -588,16 +699,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                           موبایل و دسکتاپ
                         </div>
                       </div>
-                    </button>
+                    </motion.button>
 
                     {/* Fullscreen Presentation */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenFullscreen();
                         setIsOpen(false);
                       }}
-                      className="p-2.5 rounded-2xl bg-slate-800/70 hover:bg-purple-500/15 border border-slate-700/70 hover:border-purple-500/40 text-right transition-all cursor-pointer flex items-center gap-2.5"
+                      className="p-2.5 rounded-2xl bg-slate-800/70 hover:bg-purple-500/15 border border-slate-700/70 hover:border-purple-500/40 text-right transition-all cursor-pointer flex items-center gap-2.5 shadow-sm hover:shadow-md"
                     >
                       <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-none">
                         <Eye className="w-3.5 h-3.5" />
@@ -610,16 +723,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                           حالت تمام صفحه
                         </div>
                       </div>
-                    </button>
+                    </motion.button>
 
                     {/* Theme Modal */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => {
                         soundEffects.playPop();
                         onOpenThemeModal();
                         setIsOpen(false);
                       }}
-                      className="p-2.5 rounded-2xl bg-slate-800/70 hover:bg-emerald-500/15 border border-slate-700/70 hover:border-emerald-500/40 text-right transition-all cursor-pointer flex items-center gap-2.5 col-span-2"
+                      className="p-2.5 rounded-2xl bg-slate-800/70 hover:bg-emerald-500/15 border border-slate-700/70 hover:border-emerald-500/40 text-right transition-all cursor-pointer flex items-center gap-2.5 col-span-2 shadow-sm hover:shadow-md"
                     >
                       <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-none">
                         <Palette className="w-3.5 h-3.5" />
@@ -632,12 +747,15 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                           انتخاب از بین دارک آبسیدین، مینیمال عاجی، نئو گلس و خلاق
                         </div>
                       </div>
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* 5. Audio & Shortcuts Guide */}
-                <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5 text-xs">
+                {/* 5. Audio & Shortcuts Guide with Slide-in & Scale-up */}
+                <motion.div
+                  variants={navItemVariants}
+                  className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5 text-xs shadow-inner"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-slate-300 font-bold flex items-center gap-1.5">
                       {soundActive ? <Volume2 className="w-3.5 h-3.5 text-orange-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
@@ -665,8 +783,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                       <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">Ctrl + Y</span>
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
               {/* Drawer Footer */}
               <div className="p-3.5 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-[11px] text-slate-500 flex-none">

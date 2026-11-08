@@ -3,7 +3,7 @@ import { CatalogState } from '../../types/catalog';
 import { CATALOG_SIZES, FONT_CONFIG, FONT_WEIGHTS } from '../../constants/presets';
 import { CatalogPageRenderer } from './CatalogPageRenderer';
 import { SelectionFloatingToolbar } from './SelectionFloatingToolbar';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import {
   ChevronRight,
   ChevronLeft,
@@ -34,9 +34,49 @@ interface CatalogStageProps {
   onBatchChangeLayer?: (action: 'front' | 'back' | 'forward' | 'backward') => void;
   onBatchAlign?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   onBatchDistribute?: (direction: 'horizontal' | 'vertical') => void;
+  onBatchToggleLock?: (forcedState?: boolean) => void;
   onSelectAllBlocks?: () => void;
   onClearSelection?: () => void;
 }
+
+// Staggered Container for Table of Contents navigation menu items
+const tocListVariants: Variants = {
+  closed: {
+    transition: {
+      staggerChildren: 0.03,
+      staggerDirection: -1,
+    },
+  },
+  open: {
+    transition: {
+      delayChildren: 0.08,
+      staggerChildren: 0.045,
+    },
+  },
+};
+
+// Item animation combining Fade-In, Slide-In (from right), and Scale-Up
+const tocItemVariants: Variants = {
+  closed: {
+    opacity: 0,
+    x: 30,
+    scale: 0.9,
+    transition: {
+      duration: 0.16,
+      ease: [0.32, 0, 0.67, 0] as const,
+    },
+  },
+  open: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      damping: 24,
+      stiffness: 280,
+    },
+  },
+};
 
 export const CatalogStage: React.FC<CatalogStageProps> = ({
   state,
@@ -56,6 +96,7 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
   onBatchChangeLayer,
   onBatchAlign,
   onBatchDistribute,
+  onBatchToggleLock,
   onSelectAllBlocks,
   onClearSelection,
 }) => {
@@ -382,27 +423,41 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
                 </button>
               </div>
 
-              <div className="flex flex-col gap-2 my-2">
+              {/* Menu items list with staggered Fade-In, Slide-In and Scale-Up */}
+              <motion.div
+                variants={tocListVariants}
+                initial="closed"
+                animate="open"
+                exit="closed"
+                className="flex flex-col gap-2 my-2 flex-1 overflow-y-auto no-scrollbar"
+              >
                 {state.pg.map((p, idx) => (
-                  <button
+                  <motion.button
                     key={p.id}
+                    variants={tocItemVariants}
+                    whileHover={{ scale: 1.02, x: -4 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => handleJump(idx)}
-                    className={`flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer text-right ${
+                    className={`flex items-center justify-between p-3 rounded-2xl transition-all cursor-pointer text-right shadow-sm ${
                       idx === currentPageIndex
-                        ? 'font-extrabold shadow-sm'
-                        : 'opacity-80 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                        ? 'font-extrabold shadow-md'
+                        : 'opacity-85 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                     style={{
                       backgroundColor:
                         idx === currentPageIndex
-                          ? `color-mix(in srgb, ${c.ac} 18%, transparent)`
-                          : 'transparent',
+                          ? `color-mix(in srgb, ${c.ac} 20%, transparent)`
+                          : 'color-mix(in srgb, var(--card-sf, currentColor) 5%, transparent)',
                       color: idx === currentPageIndex ? c.ac : 'inherit',
+                      border:
+                        idx === currentPageIndex
+                          ? `1px solid color-mix(in srgb, ${c.ac} 40%, transparent)`
+                          : '1px solid transparent',
                     }}
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center font-mono"
+                        className="w-7 h-7 rounded-xl text-xs font-bold flex items-center justify-center font-mono shadow-sm"
                         style={{
                           backgroundColor:
                             idx === currentPageIndex ? c.ac : 'var(--card-sf, rgba(120,120,120,0.15))',
@@ -414,24 +469,27 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
                       <span className="text-sm font-semibold">{p.t}</span>
                     </div>
                     {p.toc && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 opacity-70">
+                      <span className="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 opacity-70">
                         در فهرست
                       </span>
                     )}
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </motion.div>
 
-              <button
+              <motion.button
+                variants={tocItemVariants}
+                whileHover={{ scale: 1.02, y: -1 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => {
                   onAddPage();
                   setIsMenuOpen(false);
                 }}
-                className="mt-auto flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-current/25 rounded-2xl text-xs font-bold hover:border-current transition-colors cursor-pointer"
+                className="mt-auto flex items-center justify-center gap-2 py-3 border-2 border-dashed border-current/25 rounded-2xl text-xs font-bold hover:border-current transition-colors cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>افزودن صفحه جدید</span>
-              </button>
+              </motion.button>
             </motion.div>
           </div>
         )}
@@ -560,6 +618,7 @@ export const CatalogStage: React.FC<CatalogStageProps> = ({
             onChangeLayer={(action) => onBatchChangeLayer && onBatchChangeLayer(action)}
             onAlign={(alignment) => onBatchAlign && onBatchAlign(alignment)}
             onDistribute={(dir) => onBatchDistribute && onBatchDistribute(dir)}
+            onToggleLock={(forced) => onBatchToggleLock && onBatchToggleLock(forced)}
             onSelectAll={() => onSelectAllBlocks && onSelectAllBlocks()}
             onClearSelection={() => onClearSelection && onClearSelection()}
           />

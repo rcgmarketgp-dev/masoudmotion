@@ -58,6 +58,7 @@ export interface BaseBlock {
   customBorderColor?: string; // Border color override
   customRadius?: number;      // Border radius in px
   scale?: number;             // Scale factor (0.5 to 2.5)
+  isLocked?: boolean;         // When true, layer cannot be dragged, moved, resized, or deleted until unlocked
 
   // Interactive click action & page navigation
   actionType?: 'none' | 'link' | 'page' | 'tel' | 'email';

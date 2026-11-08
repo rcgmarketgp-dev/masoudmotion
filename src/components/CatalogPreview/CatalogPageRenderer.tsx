@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { CatalogBlock, CatalogPage, CatalogState } from '../../types/catalog';
 import { CATALOG_SIZES } from '../../constants/presets';
 import { BlockRenderer } from './BlockRenderer';
-import { Move } from 'lucide-react';
+import { Move, Lock } from 'lucide-react';
 
 interface CatalogPageRendererProps {
   page: CatalogPage;
@@ -85,7 +85,7 @@ export const CatalogPageRenderer: React.FC<CatalogPageRendererProps> = ({
 
   // Pointer drag handler for moving elements freely on the page
   const handleStartDrag = (e: React.PointerEvent, block: CatalogBlock) => {
-    if (isPrintMode || isInteractiveMode || !onUpdateBlockPosition) return;
+    if (isPrintMode || isInteractiveMode || !onUpdateBlockPosition || block.isLocked) return;
     e.stopPropagation();
     if (onSelectBlock) {
       onSelectBlock(block.id);
@@ -292,7 +292,11 @@ export const CatalogPageRenderer: React.FC<CatalogPageRendererProps> = ({
             <div
               key={block.id}
               className={`absolute pointer-events-auto transition-transform ${
-                isDragging ? 'cursor-grabbing scale-105 z-50' : 'cursor-grab'
+                block.isLocked
+                  ? 'cursor-default'
+                  : isDragging
+                  ? 'cursor-grabbing scale-105 z-50'
+                  : 'cursor-grab'
               }`}
               style={{
                 left: `${curX}%`,
@@ -303,26 +307,44 @@ export const CatalogPageRenderer: React.FC<CatalogPageRendererProps> = ({
                 transformOrigin: 'center center',
               }}
             >
-              {/* Drag handle & Coordinate badge (shown in editor when selected or dragged) */}
+              {/* Drag handle & Coordinate / Lock badge (shown in editor when selected or dragged) */}
               {!isPrintMode && !isInteractiveMode && (
                 <div
-                  onPointerDown={(e) => handleStartDrag(e, block)}
+                  onPointerDown={(e) => {
+                    if (block.isLocked) {
+                      e.stopPropagation();
+                      if (onSelectBlock) onSelectBlock(block.id);
+                      return;
+                    }
+                    handleStartDrag(e, block);
+                  }}
                   className={`absolute -top-7 right-0 flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold shadow-md transition-all select-none ${
-                    isSelected || isDragging
+                    block.isLocked
+                      ? 'bg-amber-500 text-slate-950 ring-2 ring-white/50 cursor-not-allowed shadow-amber-500/20'
+                      : isSelected || isDragging
                       ? 'bg-orange-500 text-white ring-2 ring-white/30'
                       : 'bg-black/70 text-white/80 opacity-0 group-hover:opacity-100'
                   }`}
-                  title="کشیدن برای جابجایی آزاد"
+                  title={block.isLocked ? 'این لایه قفل است (غیرقابل جابجایی)' : 'کشیدن برای جابجایی آزاد'}
                 >
-                  <Move className="w-3 h-3" />
-                  <span>
-                    X:{curX}% Y:{curY}%
-                  </span>
+                  {block.isLocked ? (
+                    <>
+                      <Lock className="w-3 h-3 text-slate-950" />
+                      <span className="font-sans font-black text-[9px]">قفل لایه</span>
+                    </>
+                  ) : (
+                    <>
+                      <Move className="w-3 h-3" />
+                      <span>
+                        X:{curX}% Y:{curY}%
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
               <div
                 onPointerDown={(e) => {
-                  if (isSelected && !isInteractiveMode) {
+                  if (isSelected && !isInteractiveMode && !block.isLocked) {
                     handleStartDrag(e, block);
                   }
                 }}

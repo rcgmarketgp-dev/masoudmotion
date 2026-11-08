@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   BlockType,
   CatalogBlock,
+  CatalogPage,
   CatalogState,
   HeadingBlock,
   TextBlock,
@@ -48,7 +49,22 @@ import {
   AlignHorizontalDistributeCenter,
   AlignVerticalDistributeCenter,
   LayoutGrid,
+  Lock,
+  Unlock,
+  Search,
+  ExternalLink,
+  Plus,
+  Palette,
+  Bookmark,
+  Eye,
+  Star,
+  Tag,
 } from 'lucide-react';
+import {
+  CANVA_CATALOG_TEMPLATES,
+  CanvaTemplateItem,
+} from '../../constants/canvaTemplates';
+import { CatalogThemePalette } from '../../types/catalog';
 
 interface ContentPanelProps {
   state: CatalogState;
@@ -58,6 +74,11 @@ interface ContentPanelProps {
   onSelectBlock: (blockId: string, isMulti?: boolean) => void;
   onUpdateState: (updater: (prev: CatalogState) => CatalogState) => void;
   onOpenIconModal?: () => void;
+  onOpenCanvaModal?: (searchQuery?: string) => void;
+  onApplyCanvaTemplate?: (page: CatalogPage, mode: 'new' | 'replace') => void;
+  onApplyCanvaPalette?: (palette: CatalogThemePalette) => void;
+  pinnedCanvaTemplate?: CanvaTemplateItem | null;
+  onClearPinnedInspiration?: () => void;
   onPageChange?: (index: number) => void;
   onSelectAllBlocks?: () => void;
   onClearSelection?: () => void;
@@ -68,6 +89,7 @@ interface ContentPanelProps {
   onBatchSetWidth?: (width: number) => void;
   onBatchAlign?: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   onBatchDistribute?: (direction: 'horizontal' | 'vertical') => void;
+  onBatchToggleLock?: (forcedState?: boolean) => void;
 }
 
 export const ContentPanel: React.FC<ContentPanelProps> = ({
@@ -78,6 +100,11 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
   onSelectBlock,
   onUpdateState,
   onOpenIconModal,
+  onOpenCanvaModal,
+  onApplyCanvaTemplate,
+  onApplyCanvaPalette,
+  pinnedCanvaTemplate,
+  onClearPinnedInspiration,
   onPageChange,
   onSelectAllBlocks,
   onClearSelection,
@@ -88,11 +115,13 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
   onBatchSetWidth,
   onBatchAlign,
   onBatchDistribute,
+  onBatchToggleLock,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const prodImgInputRef = useRef<HTMLInputElement>(null);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
+  const [canvaPanelSearch, setCanvaPanelSearch] = useState('');
 
   const currentPage = state.pg[currentPageIndex] || state.pg[0];
   const effectiveSelectedIds =
@@ -105,6 +134,9 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
   const primarySelectedBlock = currentPage.bl.find((b) => effectiveSelectedIds.includes(b.id));
   const primaryScale = primarySelectedBlock?.scale ?? 1;
   const currentScalePercent = Math.round(primaryScale * 100);
+  const selectedBlocksList = currentPage.bl.filter((b) => effectiveSelectedIds.includes(b.id));
+  const areAllSelectedLocked = selectedBlocksList.length > 0 && selectedBlocksList.every((b) => b.isLocked);
+  const areAnySelectedLocked = selectedBlocksList.some((b) => b.isLocked);
   const selectedBlock =
     currentPage.bl.find((b) => b.id === selectedBlockId) || primarySelectedBlock;
 
@@ -136,6 +168,11 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
   };
 
   const handleDeleteBlock = (blockId: string) => {
+    const block = currentPage.bl.find((b) => b.id === blockId);
+    if (block?.isLocked) {
+      alert('این المان قفل است و نمی‌توان آن را حذف کرد. ابتدا قفل را باز کنید.');
+      return;
+    }
     soundEffects.playPop();
     onUpdateState((prev) => {
       const nextPages = [...prev.pg];
@@ -306,7 +343,204 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
           </span>
           <span className="text-[10px] opacity-60">کلیک برای افزودن</span>
         </div>
-        <AnimatedToolDock onAddBlock={handleAddBlock} onOpenIconModal={onOpenIconModal} />
+        <AnimatedToolDock
+          onAddBlock={handleAddBlock}
+          onOpenIconModal={onOpenIconModal}
+          onOpenCanvaModal={onOpenCanvaModal ? () => onOpenCanvaModal() : undefined}
+        />
+      </section>
+
+      {/* Canva Inspiration & Direct Template Search Showcase */}
+      <section className="flex flex-col gap-3 p-4 rounded-3xl bg-gradient-to-br from-slate-900/90 via-indigo-950/40 to-slate-900/90 border border-indigo-500/30 shadow-lg text-right">
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#00c4cc] to-[#7d2ae8] flex items-center justify-center shadow-md shadow-indigo-500/20">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <span className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-purple-400">
+                ویترین الهام و پیش‌نمایش قالب‌های Canva
+              </span>
+              <p className="text-[10px] text-slate-400">
+                جستجوی زنده، بررسی ساختار و کپی ایده‌های طراحی
+              </p>
+            </div>
+          </div>
+
+          {onOpenCanvaModal && (
+            <button
+              onClick={() => onOpenCanvaModal(canvaPanelSearch)}
+              className="px-2.5 py-1 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <span>گالری کامل</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Live Search Bar for Canva Templates */}
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={canvaPanelSearch}
+            onChange={(e) => setCanvaPanelSearch(e.target.value)}
+            placeholder="جستجوی سریع بین قالب‌های Canva (محصول، منو، فشن، تخفیف...)"
+            className="w-full pr-8 pl-8 py-2 rounded-xl bg-black/40 border border-slate-700/80 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition-all text-right"
+          />
+          {canvaPanelSearch && (
+            <button
+              onClick={() => setCanvaPanelSearch('')}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Active Pinned Inspiration Template (If User pinned one) */}
+        {pinnedCanvaTemplate && (
+          <div className="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-500/50 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
+                <Bookmark className="w-3.5 h-3.5 fill-indigo-400 text-indigo-400" />
+                <span>قالب پین‌شده برای الهام: {pinnedCanvaTemplate.title}</span>
+              </span>
+              {onClearPinnedInspiration && (
+                <button
+                  onClick={() => {
+                    soundEffects.playPop();
+                    onClearPinnedInspiration();
+                  }}
+                  className="text-slate-400 hover:text-white p-0.5"
+                  title="حذف پین"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] text-slate-300">
+              <div className="flex items-center gap-1">
+                <span>رنگ‌ها:</span>
+                <div className="flex items-center gap-1">
+                  {[
+                    pinnedCanvaTemplate.palette.bg,
+                    pinnedCanvaTemplate.palette.sf,
+                    pinnedCanvaTemplate.palette.ac,
+                    pinnedCanvaTemplate.palette.fg,
+                  ].map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-3 h-3 rounded-full border border-white/20"
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {onApplyCanvaPalette && (
+                <button
+                  onClick={() => onApplyCanvaPalette(pinnedCanvaTemplate.palette)}
+                  className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-0.5 cursor-pointer"
+                >
+                  <Palette className="w-3 h-3" />
+                  <span>اعمال رنگ‌ها</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mini Preview Carousel / Grid of Canva Templates */}
+        <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1">
+          {CANVA_CATALOG_TEMPLATES.filter((tpl) => {
+            if (!canvaPanelSearch.trim()) return true;
+            const q = canvaPanelSearch.toLowerCase();
+            return (
+              tpl.title.toLowerCase().includes(q) ||
+              tpl.categoryLabel.toLowerCase().includes(q) ||
+              tpl.tags.some((t) => t.toLowerCase().includes(q))
+            );
+          }).map((tpl) => (
+            <div
+              key={tpl.id}
+              className="flex-none w-48 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 hover:border-indigo-400/50 p-2.5 flex flex-col justify-between gap-2 transition-all shadow-sm group"
+            >
+              {/* Mini Mockup Banner */}
+              <div
+                className={`h-20 rounded-xl bg-gradient-to-br ${tpl.previewBg} p-2 flex flex-col justify-between relative overflow-hidden`}
+              >
+                <div className="flex items-center justify-between text-[9px] text-white">
+                  <span className="px-1.5 py-0.5 rounded bg-black/50 font-bold backdrop-blur-sm">
+                    {tpl.categoryLabel}
+                  </span>
+                  <div className="flex items-center gap-0.5 bg-black/40 px-1 py-0.5 rounded text-amber-300 font-bold">
+                    <Star className="w-2.5 h-2.5 fill-amber-300" />
+                    <span>{tpl.rating}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-0.5 bg-black/40 p-1 rounded-lg">
+                    {[tpl.palette.bg, tpl.palette.sf, tpl.palette.ac].map((c, i) => (
+                      <div
+                        key={i}
+                        className="w-2.5 h-2.5 rounded-full border border-white/20"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[8px] font-mono text-white/80">
+                    {tpl.pageTemplate.bl.length} المان
+                  </span>
+                </div>
+              </div>
+
+              {/* Title & Description */}
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-black text-white truncate group-hover:text-indigo-300 transition-colors">
+                  {tpl.title}
+                </span>
+                <span className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">
+                  {tpl.subtitle}
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-1 pt-1 border-t border-slate-700/60">
+                <button
+                  onClick={() => {
+                    soundEffects.playAdd();
+                    if (onApplyCanvaTemplate) {
+                      onApplyCanvaTemplate(tpl.pageTemplate, 'new');
+                    }
+                  }}
+                  className="py-1.5 px-2 rounded-lg bg-gradient-to-r from-[#00c4cc] to-[#7d2ae8] text-white text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer shadow-sm hover:opacity-90"
+                  title="درج به عنوان برگه جدید در کاتالوگ"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>افزودن</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    soundEffects.playPop();
+                    if (onOpenCanvaModal) {
+                      onOpenCanvaModal(tpl.title);
+                    }
+                  }}
+                  className="py-1.5 px-2 rounded-lg bg-slate-700/70 hover:bg-slate-700 text-slate-200 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                  title="پیش‌نمایش کامل و الهام‌گیری"
+                >
+                  <Eye className="w-3 h-3 text-cyan-400" />
+                  <span>جزئیات</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* 2. Batch / Multi-selection & Layer & Resize Controller */}
@@ -349,6 +583,77 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Lock / Unlock Layer Protection Banner & Action */}
+          <div
+            className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+              areAllSelectedLocked
+                ? 'bg-amber-500/15 border-amber-500/40 shadow-sm'
+                : 'bg-black/15 dark:bg-white/5 border-current/10'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                  areAllSelectedLocked
+                    ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/20'
+                    : 'bg-white/10 text-slate-400'
+                }`}
+              >
+                {areAllSelectedLocked ? (
+                  <Lock className="w-4 h-4 animate-pulse" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
+                )}
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="font-bold text-xs flex items-center gap-1.5">
+                  <span>{areAllSelectedLocked ? 'وضعیت: قفل شده (محافظت‌شده)' : 'وضعیت: آزاد و قابل ویرایش'}</span>
+                  {areAllSelectedLocked && (
+                    <span className="px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 font-mono text-[9px] font-bold">
+                      LOCKED
+                    </span>
+                  )}
+                </span>
+                <span className="text-[10px] opacity-65">
+                  {areAllSelectedLocked
+                    ? 'این المان قفل است تا از جابجایی، تغییر سایز یا حذف تصادفی جلوگیری شود.'
+                    : 'برای جلوگیری از دستکاری ناخواسته، می‌توانید این لایه را قفل کنید.'}
+                </span>
+              </div>
+            </div>
+
+            {onBatchToggleLock && (
+              <button
+                onClick={() => {
+                  soundEffects.playPop();
+                  onBatchToggleLock(!areAllSelectedLocked);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border ${
+                  areAllSelectedLocked
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/30'
+                    : 'bg-black/20 dark:bg-white/10 hover:bg-amber-500 hover:text-slate-950 text-slate-200 border-white/15'
+                }`}
+                title={
+                  areAllSelectedLocked
+                    ? 'باز کردن قفل جهت جابجایی یا ویرایش'
+                    : 'قفل کردن این عناصر در برابر جابجایی یا حذف تصادفی'
+                }
+              >
+                {areAllSelectedLocked ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>باز کردن قفل</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>قفل کردن لایه</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Resize Controls (تغییر سایز دسته‌جمعی یا تکی) */}
@@ -645,14 +950,26 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
           <div className="pt-2 border-t border-current/15">
             <button
               onClick={() => {
+                if (areAllSelectedLocked) return;
                 soundEffects.playPop();
                 onBatchDelete && onBatchDelete();
               }}
-              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-xs shadow-md shadow-red-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
+              disabled={areAllSelectedLocked}
+              className={`w-full py-2.5 px-3 rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all ${
+                areAllSelectedLocked
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+                  : 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-red-500/25 cursor-pointer'
+              }`}
             >
-              <Trash2 className="w-4 h-4" />
+              {areAllSelectedLocked ? (
+                <Lock className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
               <span>
-                {selectedCount > 1
+                {areAllSelectedLocked
+                  ? 'این المان قفل شده است (غیرقابل حذف)'
+                  : selectedCount > 1
                   ? `حذف دسته‌جمعی (${selectedCount} عنصر انتخاب شده)`
                   : 'حذف عنصر انتخاب شده'}
               </span>
@@ -671,7 +988,34 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
                 ویرایش جزئیات بلوک: {selectedBlock.t.toUpperCase()}
               </b>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              {/* Lock/Unlock Toggle Button for Selected Block */}
+              <button
+                onClick={() => {
+                  soundEffects.playPop();
+                  handleUpdateBlock(selectedBlock.id, { isLocked: !selectedBlock.isLocked });
+                }}
+                className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                  selectedBlock.isLocked
+                    ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-sm'
+                    : 'hover:bg-black/10 dark:hover:bg-white/10 text-slate-300 border-current/15'
+                }`}
+                title={
+                  selectedBlock.isLocked
+                    ? 'باز کردن قفل این المان'
+                    : 'قفل کردن این المان در برابر جابجایی یا حذف'
+                }
+              >
+                {selectedBlock.isLocked ? (
+                  <Lock className="w-3.5 h-3.5" />
+                ) : (
+                  <Unlock className="w-3.5 h-3.5" />
+                )}
+                <span className="text-[10px]">
+                  {selectedBlock.isLocked ? 'قفل شده' : 'قفل لایه'}
+                </span>
+              </button>
+
               <button
                 onClick={() => handleDuplicateBlock(selectedBlock.id)}
                 className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-xs cursor-pointer"
@@ -679,10 +1023,16 @@ export const ContentPanel: React.FC<ContentPanelProps> = ({
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
+
               <button
                 onClick={() => handleDeleteBlock(selectedBlock.id)}
-                className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 text-xs cursor-pointer"
-                title="حذف این بلوک"
+                disabled={selectedBlock.isLocked}
+                className={`p-1.5 rounded-lg text-xs cursor-pointer ${
+                  selectedBlock.isLocked
+                    ? 'opacity-40 cursor-not-allowed text-slate-500'
+                    : 'text-red-500 hover:bg-red-500/10'
+                }`}
+                title={selectedBlock.isLocked ? 'این بلوک قفل است' : 'حذف این بلوک'}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
